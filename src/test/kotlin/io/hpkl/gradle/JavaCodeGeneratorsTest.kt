@@ -13,7 +13,7 @@ class JavaCodeGeneratorsTest : AbstractTest() {
 
         runTask("generatePklPojo")
 
-        val baseDir = testProjectDir.resolve("build/generated/pkl/configclasses/java/foo/bar")
+        val baseDir = testProjectDir.resolve("build/generated/pkl/configClasses/java/foo/bar")
         val moduleFile = baseDir.resolve("Mod.java")
 
         assertThat(baseDir.listDirectoryEntries().count()).isEqualTo(1)
