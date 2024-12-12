@@ -75,7 +75,7 @@ class JavaCodeGeneratorsTest : AbstractTest() {
             """
       plugins {
         id "java"
-        id "io.hpkl.gradle"        
+        id "io.hpkl"        
       }
 
       repositories {
