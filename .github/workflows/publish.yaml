@@ -43,7 +43,7 @@ jobs:
         run: |
           echo -e "gradle.publish.key=${GRADLE_KEY}\\ngradle.publish.secret=${GRADLE_SECRET}\\n" > ~/.gradle/gradle.properties
       - name: Publish
-        run: ./gradlew -Pversion=${{ steps.vars.outputs.tag }} build jib
+        run: ./gradlew -Pversion=${{ steps.vars.outputs.tag }} build publishPlugins
         env:
           CI_BRANCH_NAME:  ${{ github.ref_name }}
           CI_SHORT_COMMIT: ${{ steps.vars.outputs.sha_short }}
