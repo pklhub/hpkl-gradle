@@ -1,4 +1,4 @@
-package io.hpkl.gradle.utils
+package io.hpkl.gradle.codegen
 
 import org.pkl.commons.cli.CliBaseOptions
 import org.pkl.commons.cli.CliCommand
@@ -6,7 +6,7 @@ import org.pkl.core.Closeables
 import org.pkl.core.ModuleSource
 import org.pkl.core.PClass
 
-class PropertyDefaultValueReader {
+class DefaultValueReader {
 
     fun findFefaultValues(options: CliBaseOptions, moduleSource: ModuleSource, pClass: PClass?): Map<String, Any>? {
         val runner = Runner(options, moduleSource, pClass)

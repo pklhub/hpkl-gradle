@@ -1,5 +1,7 @@
 package io.hpkl.gradle.codegen
 
+import org.pkl.commons.cli.CliBaseOptions
+
 data class JavaCodeGeneratorOptions(
     /** The characters to use for indenting generated Java code. */
     val indent: String = "  ",
@@ -31,16 +33,8 @@ data class JavaCodeGeneratorOptions(
     val generateSpringBootConfig: Boolean = false,
     val springConfigAnnotation: String = "SpringConfigProperties",
 
-    /**
-     * Fully qualified name of the annotation to use on constructor parameters. If this options is not
-     * set, [org.pkl.config.java.mapper.Named] will be used.
-     */
     val namedAnnotation: String? = null,
 
-    /**
-     * Fully qualified name of the annotation to use on non-null properties. If this option is not
-     * set, [org.pkl.config.java.mapper.NonNull] will be used.
-     */
     val nonNullAnnotation: String? = null,
 
     /** Whether to make generated classes implement [java.io.Serializable] */
@@ -54,5 +48,13 @@ data class JavaCodeGeneratorOptions(
      */
     val renames: Map<String, String> = emptyMap(),
 
-    val generateAnnotationClasses: Boolean = false
+    val generateAnnotationClasses: Boolean = false,
+
+    val setDefaultValues: Boolean = true,
+
+    val baseCliBaseOptions: CliBaseOptions,
+
+    val durationClassConverter: String?,
+
+    val dataSizeConverter: String?
 )

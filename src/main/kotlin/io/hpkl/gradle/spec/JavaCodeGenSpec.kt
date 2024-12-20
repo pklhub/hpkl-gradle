@@ -58,4 +58,12 @@ abstract class JavaCodeGenSpec
         objects.property(String::class.java)
             .convention("SpringConfigProperties")
 
+    val setDefaultValues: Property<Boolean> =
+        objects.property(Boolean::class.java).convention(false)
+
+    val durationClassConverter: Property<String> =
+        objects.property(String::class.java)
+
+    val dataSizeConverter: Property<String> =
+        objects.property(String::class.java)
 }

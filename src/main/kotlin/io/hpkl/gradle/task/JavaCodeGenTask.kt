@@ -35,7 +35,10 @@ class JavaCodeGenTask(
                     spec.nonNullAnnotation.orNull,
                     spec.implementSerializable.get(),
                     spec.renames.get(),
-                    spec.generateAnnotationClasses.get()
+                    spec.generateAnnotationClasses.get(),
+                    spec.setDefaultValues.get(),
+                    spec.durationClassConverter.orNull,
+                    spec.dataSizeConverter.orNull
                 )
         )
         .run()
