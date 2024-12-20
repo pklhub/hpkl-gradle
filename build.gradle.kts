@@ -23,6 +23,7 @@ dependencies {
     testApi("org.junit.jupiter:junit-jupiter-params:${junitVersion}")
 
     testImplementation("org.junit.jupiter:junit-jupiter:${junitVersion}")
+
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
     testImplementation("org.assertj:assertj-core:3.26.3")

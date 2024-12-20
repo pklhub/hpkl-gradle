@@ -15,17 +15,16 @@ class JavaCodeGenerator(
     private val codegenOptions: JavaCodeGeneratorOptions
 ) {
 
-    private val dataSizeClass = ClassName.get(
-        Class.forName(
-            codegenOptions.dataSizeClass
-        )
+    private val nameMapper = NameMapper(codegenOptions.renames)
+    private val defaultValueReader = DefaultValueReader()
+
+    private val defaultValueGenerator: DefaultValueGenerator = DefaultValueGenerator(
+        codegenOptions, nameMapper
     )
 
-    private val durationClass = ClassName.get(
-        Class.forName(
-            codegenOptions.durationClass
-        )
-    )
+    private val dataSizeClass = ClassName.bestGuess(codegenOptions.dataSizeClass)
+
+    private val durationClass = ClassName.bestGuess(codegenOptions.durationClass)
 
     private val durationUnitClass = ClassName.get(
         Class.forName(
@@ -336,7 +335,7 @@ class JavaCodeGenerator(
                 }
         }
 
-        fun generateField(propertyName: String, property: PClass.Property): FieldSpec {
+        fun generateField(propertyName: String, property: PClass.Property, defaultValues: Map<String, Any>?): FieldSpec {
             val builder = FieldSpec.builder(property.type.toJavaPoetName(), propertyName)
 
             val docComment = property.docComment
@@ -362,6 +361,12 @@ class JavaCodeGenerator(
 
             if (!codegenOptions.generateSetters) {
                 builder.addModifiers(Modifier.FINAL)
+            }
+
+            if (codegenOptions.setDefaultValues) {
+                defaultValues?.get(propertyName)?.takeIf { it !is PNull }?.let {
+                    builder.initializer(defaultValueGenerator.generate(it, property.type))
+                }
             }
 
             return builder.build()
@@ -458,29 +463,37 @@ class JavaCodeGenerator(
                 { methodBuilder.addJavadoc(it) }
             )
 
-            val codeBuilder = CodeBlock.builder()
-            codeBuilder.add("return new \$T(", javaPoetClassName)
-            var firstProperty = true
-            for (name in superProperties.keys) {
-                if (name in properties) continue
-                if (firstProperty) {
-                    firstProperty = false
-                    codeBuilder.add("\$N", name)
-                } else {
-                    codeBuilder.add(", \$N", name)
+            if (!codegenOptions.generateSetters) {
+                val codeBuilder = CodeBlock.builder()
+                codeBuilder.add("return new \$T(", javaPoetClassName)
+                var firstProperty = true
+                for (name in superProperties.keys) {
+                    if (name in properties) continue
+                    if (firstProperty) {
+                        firstProperty = false
+                        codeBuilder.add("\$N", name)
+                    } else {
+                        codeBuilder.add(", \$N", name)
+                    }
                 }
-            }
-            for (name in properties.keys) {
-                if (firstProperty) {
-                    firstProperty = false
-                    codeBuilder.add("\$N", name)
-                } else {
-                    codeBuilder.add(", \$N", name)
+                for (name in properties.keys) {
+                    if (firstProperty) {
+                        firstProperty = false
+                        codeBuilder.add("\$N", name)
+                    } else {
+                        codeBuilder.add(", \$N", name)
+                    }
                 }
-            }
-            codeBuilder.add(");\n")
+                codeBuilder.add(");\n")
 
-            methodBuilder.addCode(codeBuilder.build())
+                methodBuilder.addCode(codeBuilder.build())
+            } else {
+                val codeBuilder = CodeBlock.builder()
+                codeBuilder.addStatement("this.\$N = \$N", propertyName, propertyName)
+                codeBuilder.addStatement("return this")
+                methodBuilder.addCode(codeBuilder.build())
+            }
+
             return methodBuilder.build()
         }
 
@@ -504,50 +517,23 @@ class JavaCodeGenerator(
                     )
                 }
             }
-
-//            if (isModuleClass || codegenOptions.generateSpringBootConfigForAllClasses) {
-//                builder.addAnnotation(
-//                    ClassName.get("org.springframework.boot.context.properties", "ConfigurationProperties")
-//                )
-//            } else {
-//                // not very efficient to repeat computing module property base types for every class
-//                val modulePropertiesWithMatchingType =
-//                    schema.moduleClass.allProperties.values.filter { property ->
-//                        var propertyType = property.type
-//                        while (propertyType is PType.Constrained || propertyType is PType.Nullable) {
-//                            if (propertyType is PType.Constrained) {
-//                                propertyType = propertyType.baseType
-//                            } else if (propertyType is PType.Nullable) {
-//                                propertyType = propertyType.baseType
-//                            }
-//                        }
-//                        propertyType is PType.Class && propertyType.pClass == pClass
-//                    }
-//                if (modulePropertiesWithMatchingType.size == 1) {
-//                    // exactly one module property has this type -> make it available for direct injection
-//                    // (potential improvement: make type available for direct injection if it occurs exactly
-//                    // once in property tree)
-//                    builder.addAnnotation(
-//                        AnnotationSpec.builder(
-//                            ClassName.get(
-//                                "org.springframework.boot.context.properties",
-//                                "ConfigurationProperties"
-//                            )
-//                        )
-//                            // use "value" instead of "prefix" to entice JavaPoet to generate a single-line
-//                            // annotation
-//                            // that can easily be filtered out by JavaCodeGeneratorTest.`spring boot config`
-//                            .addMember("value", "\$S", modulePropertiesWithMatchingType.first().simpleName)
-//                            .build()
-//                    )
-//                }
-//            }
         }
 
         @Suppress("DuplicatedCode")
         fun generateClass(): TypeSpec.Builder {
+
+            val defaultValues : Map<String, Any>? =
+                if (codegenOptions.setDefaultValues)
+                    defaultValueReader.findFefaultValues(
+                        codegenOptions.baseCliBaseOptions,
+                        ModuleSource.uri(schema.moduleUri),
+                        if (!isModuleClass) pClass else null
+                    )
+                else null
+
             val builder =
                 TypeSpec.classBuilder(javaPoetClassName.simpleName()).addModifiers(Modifier.PUBLIC)
+
 
             // stateless final module classes are non-instantiable by choice
             val isInstantiable =
@@ -601,7 +587,7 @@ class JavaCodeGenerator(
             // self type
             for ((name, property) in allProperties) {
                 if (name in properties) {
-                    builder.addField(generateField(name, property))
+                    builder.addField(generateField(name, property, defaultValues))
                     if (codegenOptions.generateGetters) {
                         val isOverridden = name in superProperties
                         builder.addMethod(generateGetter(name, property, isOverridden))
@@ -728,7 +714,7 @@ class JavaCodeGenerator(
 
     /** Generate `List<? extends Foo>` if `Foo` is `abstract` or `open`, to allow subclassing. */
     private fun PType.toJavaPoetTypeArgumentName(): TypeName {
-        val baseName = toJavaPoetName(nullable = false, boxed = true)
+        val baseName = toJavaPoetName(nullable = false, boxed = true, typeArgument = true)
         return if (this is PType.Class && (pClass.isAbstract || pClass.isOpen)) {
             WildcardTypeName.subtypeOf(baseName)
         } else {
@@ -736,26 +722,26 @@ class JavaCodeGenerator(
         }
     }
 
-    private fun PType.toJavaPoetName(nullable: Boolean = false, boxed: Boolean = false): TypeName =
+    private fun PType.toJavaPoetName(nullable: Boolean = false, boxed: Boolean = false, typeArgument: Boolean = false): TypeName =
         when (this) {
-            PType.UNKNOWN -> OBJECT.nullableIf(nullable)
+            PType.UNKNOWN -> OBJECT.nullableIf(nullable, typeArgument)
             PType.NOTHING -> TypeName.VOID
-            is PType.StringLiteral -> STRING.nullableIf(nullable)
+            is PType.StringLiteral -> STRING.nullableIf(nullable, typeArgument)
             is PType.Class -> {
                 // if in doubt, spell it out
                 when (val classInfo = pClass.info) {
                     PClassInfo.Any -> OBJECT
                     PClassInfo.Typed,
-                    PClassInfo.Dynamic -> OBJECT.nullableIf(nullable)
+                    PClassInfo.Dynamic -> OBJECT.nullableIf(nullable, typeArgument)
 
-                    PClassInfo.Boolean -> TypeName.BOOLEAN.boxIf(boxed).nullableIf(nullable)
-                    PClassInfo.String -> STRING.nullableIf(nullable)
+                    PClassInfo.Boolean -> TypeName.BOOLEAN.boxIf(boxed).nullableIf(nullable, typeArgument)
+                    PClassInfo.String -> STRING.nullableIf(nullable, typeArgument)
                     // seems more useful to generate `double` than `java.lang.Number`
-                    PClassInfo.Number -> TypeName.DOUBLE.boxIf(boxed).nullableIf(nullable)
-                    PClassInfo.Int -> TypeName.LONG.boxIf(boxed).nullableIf(nullable)
-                    PClassInfo.Float -> TypeName.DOUBLE.boxIf(boxed).nullableIf(nullable)
-                    PClassInfo.Duration -> durationClass.nullableIf(nullable)
-                    PClassInfo.DataSize -> dataSizeClass.nullableIf(nullable)
+                    PClassInfo.Number -> TypeName.DOUBLE.boxIf(boxed).nullableIf(nullable, typeArgument)
+                    PClassInfo.Int -> TypeName.LONG.boxIf(boxed).nullableIf(nullable, typeArgument)
+                    PClassInfo.Float -> TypeName.DOUBLE.boxIf(boxed).nullableIf(nullable, typeArgument)
+                    PClassInfo.Duration -> durationClass.nullableIf(nullable, typeArgument)
+                    PClassInfo.DataSize -> dataSizeClass.nullableIf(nullable, typeArgument)
                     PClassInfo.Pair ->
                         ParameterizedTypeName.get(
                             pairClass,
@@ -770,7 +756,7 @@ class JavaCodeGenerator(
                                 typeArguments[1].toJavaPoetTypeArgumentName()
                             }
                         )
-                            .nullableIf(nullable)
+                            .nullableIf(nullable, typeArgument)
 
                     PClassInfo.Collection ->
                         ParameterizedTypeName.get(
@@ -781,7 +767,7 @@ class JavaCodeGenerator(
                                 typeArguments[0].toJavaPoetTypeArgumentName()
                             }
                         )
-                            .nullableIf(nullable)
+                            .nullableIf(nullable, typeArgument)
 
                     PClassInfo.List,
                     PClassInfo.Listing -> {
@@ -793,7 +779,7 @@ class JavaCodeGenerator(
                                 typeArguments[0].toJavaPoetTypeArgumentName()
                             }
                         )
-                            .nullableIf(nullable)
+                            .nullableIf(nullable, typeArgument)
                     }
 
                     PClassInfo.Set ->
@@ -805,7 +791,7 @@ class JavaCodeGenerator(
                                 typeArguments[0].toJavaPoetTypeArgumentName()
                             }
                         )
-                            .nullableIf(nullable)
+                            .nullableIf(nullable, typeArgument)
 
                     PClassInfo.Map,
                     PClassInfo.Mapping ->
@@ -822,15 +808,15 @@ class JavaCodeGenerator(
                                 typeArguments[1].toJavaPoetTypeArgumentName()
                             }
                         )
-                            .nullableIf(nullable)
+                            .nullableIf(nullable, typeArgument)
 
-                    PClassInfo.Module -> PMODULE.nullableIf(nullable)
-                    PClassInfo.Class -> PCLASS.nullableIf(nullable)
-                    PClassInfo.Regex -> PATTERN.nullableIf(nullable)
-                    PClassInfo.Version -> VERSION.nullableIf(nullable)
+                    PClassInfo.Module -> PMODULE.nullableIf(nullable, typeArgument)
+                    PClassInfo.Class -> PCLASS.nullableIf(nullable, typeArgument)
+                    PClassInfo.Regex -> PATTERN.nullableIf(nullable, typeArgument)
+                    PClassInfo.Version -> VERSION.nullableIf(nullable, typeArgument)
                     else ->
                         when {
-                            !classInfo.isStandardLibraryClass -> pClass.toJavaPoetName().nullableIf(nullable)
+                            !classInfo.isStandardLibraryClass -> pClass.toJavaPoetName().nullableIf(nullable, typeArgument)
                             else ->
                                 throw JavaCodeGeneratorException(
                                     "Standard library class `${pClass.qualifiedName}` is not supported by Java code generator. " +
@@ -840,24 +826,24 @@ class JavaCodeGenerator(
                 }
             }
 
-            is PType.Nullable -> baseType.toJavaPoetName(nullable = true, boxed = true)
-            is PType.Constrained -> baseType.toJavaPoetName(nullable = nullable, boxed = boxed)
+            is PType.Nullable -> baseType.toJavaPoetName(nullable = true, boxed = true, typeArgument)
+            is PType.Constrained -> baseType.toJavaPoetName(nullable = nullable, boxed = boxed, typeArgument)
             is PType.Alias ->
                 when (typeAlias.qualifiedName) {
-                    "pkl.base#NonNull" -> OBJECT.nullableIf(nullable)
-                    "pkl.base#Int8" -> TypeName.BYTE.boxIf(boxed).nullableIf(nullable)
+                    "pkl.base#NonNull" -> OBJECT.nullableIf(nullable, typeArgument)
+                    "pkl.base#Int8" -> TypeName.BYTE.boxIf(boxed).nullableIf(nullable, typeArgument)
                     "pkl.base#Int16",
-                    "pkl.base#UInt8" -> TypeName.SHORT.boxIf(boxed).nullableIf(nullable)
+                    "pkl.base#UInt8" -> TypeName.SHORT.boxIf(boxed).nullableIf(nullable, typeArgument)
 
                     "pkl.base#Int32",
-                    "pkl.base#UInt16" -> TypeName.INT.boxIf(boxed).nullableIf(nullable)
+                    "pkl.base#UInt16" -> TypeName.INT.boxIf(boxed).nullableIf(nullable, typeArgument)
 
                     "pkl.base#UInt",
-                    "pkl.base#UInt32" -> TypeName.LONG.boxIf(boxed).nullableIf(nullable)
+                    "pkl.base#UInt32" -> TypeName.LONG.boxIf(boxed).nullableIf(nullable, typeArgument)
 
-                    "pkl.base#DurationUnit" -> durationUnitClass.nullableIf(nullable)
-                    "pkl.base#DataSizeUnit" -> dataSizeUnitClass.nullableIf(nullable)
-                    "pkl.base#Uri" -> URI.nullableIf(nullable)
+                    "pkl.base#DurationUnit" -> durationUnitClass.nullableIf(nullable, typeArgument)
+                    "pkl.base#DataSizeUnit" -> dataSizeUnitClass.nullableIf(nullable, typeArgument)
+                    "pkl.base#Uri" -> URI.nullableIf(nullable, typeArgument)
                     else -> {
                         if (CodeGeneratorUtils.isRepresentableAsEnum(aliasedType, null)) {
                             if (typeAlias.isStandardLibraryMember) {
@@ -867,11 +853,11 @@ class JavaCodeGenerator(
                                 )
                             } else {
                                 // reference generated enum class
-                                typeAlias.toJavaPoetName().nullableIf(nullable)
+                                typeAlias.toJavaPoetName().nullableIf(nullable, typeArgument)
                             }
                         } else {
                             // inline type alias
-                            aliasedType.toJavaPoetName(nullable)
+                            aliasedType.toJavaPoetName(nullable, typeArgument)
                         }
                     }
                 }
@@ -882,7 +868,7 @@ class JavaCodeGenerator(
                 )
 
             is PType.Union ->
-                if (CodeGeneratorUtils.isRepresentableAsString(this)) STRING.nullableIf(nullable)
+                if (CodeGeneratorUtils.isRepresentableAsString(this)) STRING.nullableIf(nullable, typeArgument)
                 else
                     throw JavaCodeGeneratorException(
                         "Pkl union types are not supported by the Java code generator."
@@ -893,8 +879,9 @@ class JavaCodeGenerator(
                 throw AssertionError("Encountered unexpected PType subclass: $this")
         }
 
-    private fun TypeName.nullableIf(isNullable: Boolean): TypeName =
-        if (isPrimitive && isNullable) box()
+    private fun TypeName.nullableIf(isNullable: Boolean, typeArgument: Boolean): TypeName =
+        if (typeArgument) box()
+        else if (isPrimitive && isNullable) box()
         else if (isPrimitive || isNullable) this else annotated(nonNullAnnotation)
 
     private fun TypeName.boxIf(shouldBox: Boolean): TypeName = if (shouldBox) box() else this
@@ -906,8 +893,6 @@ class JavaCodeGenerator(
             } else key
         }
     }
-
-    private val nameMapper = NameMapper(codegenOptions.renames)
 
     private fun isAnnotation(pClass: PClass) : Boolean {
         var clazz : PClass? = pClass

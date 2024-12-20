@@ -42,16 +42,8 @@ data class CliJavaCodeGeneratorOptions (
 
     val springConfigAnnotation: String = "SpringConfigProperties",
 
-    /**
-     * Fully qualified name of the annotation to use on constructor parameters. If this options is not
-     * set, [org.pkl.config.java.mapper.Named] will be used.
-     */
     val namedAnnotation: String? = null,
 
-    /**
-     * Fully qualified name of the annotation to use on non-null properties. If this option is not
-     * set, [org.pkl.config.java.mapper.NonNull] will be used.
-     */
     val nonNullAnnotation: String? = null,
 
     /** Whether to make generated classes implement [java.io.Serializable] */
@@ -67,6 +59,12 @@ data class CliJavaCodeGeneratorOptions (
     val renames: Map<String, String> = emptyMap(),
 
     val generateAnnotationClasses: Boolean = false,
+
+    val setDefaultValues: Boolean = false,
+
+    val durationClassConverter: String? = null,
+
+    val dataSizeConverter: String? = null
 ) {
     @Suppress("DeprecatedCallableAddReplaceWith")
     @Deprecated("deprecated without replacement")
@@ -90,6 +88,10 @@ data class CliJavaCodeGeneratorOptions (
             nonNullAnnotation,
             implementSerializable,
             renames,
-            generateAnnotationClasses
+            generateAnnotationClasses,
+            setDefaultValues,
+            base,
+            durationClassConverter,
+            dataSizeConverter
         )
 }

@@ -28,7 +28,7 @@ class JavaCodeGeneratorsTest : AbstractTest() {
             text,
             """
       |public final class Mod {
-      |  public final @Nonnull Object other;
+      |  public @Nonnull Object other = 42;
     """
         )
 
@@ -36,9 +36,9 @@ class JavaCodeGeneratorsTest : AbstractTest() {
             text,
             """
       |  public static final class Person {
-      |    public final @Nonnull String name;
+      |    public @Nonnull String name = "defaultName";
       |
-      |    public final @Nonnull List<Address> addresses;
+      |    public @Nonnull List<Address> addresses = List.of();
     """
         )
 
@@ -46,9 +46,23 @@ class JavaCodeGeneratorsTest : AbstractTest() {
             text,
             """
       |  public static final class Address {
-      |    public final @Nonnull String street;
+      |    public String street;
       |
-      |    public final long zip;
+      |    public Long zip;
+      |
+      |    public Duration duration;
+      |
+      |    public @Nonnull String region = "Unknown";
+      |
+      |    public long code = 10;
+      |
+      |    public boolean enabled = true;
+      |
+      |    public double width = 1.0;
+      |
+      |    public @Nonnull Duration timeout = Duration.parse("PT1S");
+      |
+      |    public @Nonnull DataSize size = org.springframework.util.unit.DataSize.ofBytes(1000);
     """
         )
     }
@@ -85,15 +99,22 @@ class JavaCodeGeneratorsTest : AbstractTest() {
       dependencies {
         implementation "javax.inject:javax.inject:1"
         implementation "com.google.code.findbugs:jsr305:3.0.2"
+        implementation "org.pkl-lang:pkl-core:0.27.1"
+        implementation "org.springframework:spring-core:6.1.8"        
       }
 
       hpkl {
         javaCodeGenerators {
           configClasses {
             sourceModules = ["mod.pkl"]
+            durationClass = "java.time.Duration"
+            dataSizeClass = "org.springframework.util.unit.DataSize"
+            dataSizeConverter = "org.springframework.util.unit.DataSize.ofBytes"
             namedAnnotation = "javax.inject.Named"
             nonNullAnnotation = "javax.annotation.Nonnull"
             settingsModule = "pkl:settings"
+            generateSetters = true
+            setDefaultValues = true
             renames = [
               'org': 'foo.bar'
             ]
@@ -111,16 +132,53 @@ class JavaCodeGeneratorsTest : AbstractTest() {
         module org.mod
   
         class SpringConfigProperties extends Annotation { prefix: String }
+        typealias EmailAddress = String(matches(Regex(#".+@.+"#)))
         class Person {
-          name: String
+          name: String = "defaultName"
           addresses: List<Address?>
         }
   
         class Address {
-          street: String
-          zip: Int
+          street: String?
+          zip: Int?
           duration: Duration?
+          region: String = "Unknown"
+          code: Int = 10
+          enabled: Boolean = true
+          width: Float = 1.0
+          timeout: Duration = 1.s
+          size: DataSize = 1.kb
+          intList: List<Int> = List(1, 2, 3)
+          int8List: List<Int8> = List(1, 2, 3)
+          int16List: List<Int16> = List(1, 2, 3)
+          int32List: List<Int32> = List(1, 2, 3)
+          intListing: Listing<Int> = (Listing) { 1; 2; 3 }
+          strList: List<String> = List("1", "2", "3")
+          boolList: List<Boolean> = List(true, false, true)
+          floatList: List<Float> = List(1.0, 2.0, 3.0)
+          durationList: List<Duration> = List(1.s, 2.s, 3.s)
+          dataSizeList: List<DataSize> = List(1.kb, 2.kb, 3.kb)
+          codeObj : AddressPostCode = new AddressPostCode { code = 1 }
+          codes: List<AddressPostCode> = List(new AddressPostCode { code = 1 }, new AddressPostCode { code = 2; strCode = "1"})
+          map: Map<String, Int> = Map("1", 2, "2", 3, "3", 4)
+          optional: OptionalClass = new OptionalClass {}
+          diet: Diet = "Berries"
+          email: EmailAddress = "test@test.com"
         }
+        
+        typealias Diet = "Seeds"|"Berries"|"Insects"
+        
+        class OptionalClass {
+            a: Int = 1
+            b: String?
+        }
+        
+        class AddressPostCode {
+           code: Int
+           strCode: String? 
+        }
+        
+        
   
         other = 42
       """

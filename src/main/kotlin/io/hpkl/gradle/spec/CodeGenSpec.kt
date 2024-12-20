@@ -37,9 +37,6 @@ abstract class CodeGenSpec(name: String, project: Project, objects: ObjectFactor
     val generateSpringBootConfig : Property<Boolean> =
         objects.property(Boolean::class.java).convention(false)
 
-    val generateSpringBootConfigForAllClasses: Property<Boolean> =
-        objects.property(Boolean::class.java).convention(false)
-
     val implementSerializable : Property<Boolean> =
         objects.property(Boolean::class.java).convention(false)
 
