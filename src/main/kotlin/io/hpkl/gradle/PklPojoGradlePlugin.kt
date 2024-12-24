@@ -19,5 +19,6 @@ class PklPojoGradlePlugin : Plugin<Project> {
         )
 
         project.tasks.findByName("compileJava")?.dependsOn(task.name)
+        project.tasks.findByName("compileKotlin")?.dependsOn(task.name)
     }
 }

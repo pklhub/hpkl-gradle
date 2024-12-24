@@ -1,4 +1,4 @@
-package io.hpkl.gradle.codegen
+package io.hpkl.gradle.codegen.java
 
 import org.pkl.commons.cli.CliBaseOptions
 

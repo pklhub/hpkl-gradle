@@ -1,10 +1,11 @@
 package io.hpkl.gradle.cli
 
 import io.hpkl.gradle.codegen.java.JavaCodeGeneratorOptions
+import io.hpkl.gradle.codegen.kotlin.KotlinCodeGeneratorOptions
 import org.pkl.commons.cli.CliBaseOptions
 import java.nio.file.Path
 
-data class CliJavaCodeGeneratorOptions (
+class CliKotlinCodeGeneratorOptions (
     /** Base options shared between CLI commands. */
     val base: CliBaseOptions,
 
@@ -14,37 +15,23 @@ data class CliJavaCodeGeneratorOptions (
     /** The characters to use for indenting generated source code. */
     val indent: String = "  ",
 
-    val durationClass : String?,
+    val durationClass : String,
 
-    val dataSizeClass : String?,
+    val dataSizeClass : String,
 
-    val durationUnitClass : String?,
+    val durationUnitClass : String,
 
-    val dataSizeUnitClass : String?,
+    val dataSizeUnitClass : String,
 
-    val pairClass : String?,
-
-    /**
-     * Whether to generate public getter methods and private/protected fields instead of public
-     * fields.
-     */
-    val generateGetters: Boolean = false,
-
-    val generateSetters: Boolean = false,
-
-    val generateEmptyConstructor: Boolean = false,
+    val mutableObjects: Boolean = false,
 
     /** Whether to generate Javadoc based on doc comments for Pkl modules, classes, and properties. */
-    val generateJavadoc: Boolean = false,
+    val generateKdoc: Boolean = false,
 
     /** Whether to generate config classes for use with Spring Boot. */
     val generateSpringBootConfig: Boolean = false,
 
     val springConfigAnnotation: String = "SpringConfigProperties",
-
-    val namedAnnotation: String? = null,
-
-    val nonNullAnnotation: String? = null,
 
     /** Whether to make generated classes implement [java.io.Serializable] */
     val implementSerializable: Boolean = false,
@@ -68,30 +55,25 @@ data class CliJavaCodeGeneratorOptions (
 ) {
     @Suppress("DeprecatedCallableAddReplaceWith")
     @Deprecated("deprecated without replacement")
-    fun toJavaCodegenOptions() = toJavaCodeGeneratorOptions()
+    fun toKotlinCodegenOptions() = toKotlinCodeGeneratorOptions()
 
-    internal fun toJavaCodeGeneratorOptions() =
-        JavaCodeGeneratorOptions(
-            indent,
-            durationClass,
-            durationUnitClass,
-            dataSizeClass,
-            dataSizeUnitClass,
-            pairClass,
-            generateGetters,
-            generateSetters,
-            generateEmptyConstructor,
-            generateJavadoc,
-            generateSpringBootConfig,
-            springConfigAnnotation,
-            namedAnnotation,
-            nonNullAnnotation,
-            implementSerializable,
-            renames,
-            generateAnnotationClasses,
-            setDefaultValues,
-            base,
-            durationClassConverter,
-            dataSizeConverter
+    internal fun toKotlinCodeGeneratorOptions() =
+        KotlinCodeGeneratorOptions(
+            indent = indent,
+            durationClass = durationClass,
+            durationUnitClass = durationUnitClass,
+            dataSizeClass = dataSizeClass,
+            dataSizeUnitClass =dataSizeUnitClass,
+            generateKdoc = generateKdoc,
+            mutableObjects = mutableObjects,
+            generateSpringBootConfig = generateSpringBootConfig,
+            springConfigAnnotation = springConfigAnnotation,
+            implementSerializable = implementSerializable,
+            renames = renames,
+            generateAnnotationClasses = generateAnnotationClasses,
+            setDefaultValues = setDefaultValues,
+            baseCliBaseOptions = base,
+            durationClassConverter = durationClassConverter,
+            dataSizeConverter = dataSizeConverter
         )
 }
