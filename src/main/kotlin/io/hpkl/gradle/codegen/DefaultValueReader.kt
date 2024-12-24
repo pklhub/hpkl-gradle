@@ -8,15 +8,19 @@ import org.pkl.core.PClass
 
 class DefaultValueReader {
 
-    fun findFefaultValues(options: CliBaseOptions, moduleSource: ModuleSource, pClass: PClass?): Map<String, Any>? {
-        val runner = Runner(options, moduleSource, pClass)
+    fun findDefaultValues(options: CliBaseOptions,
+                          moduleSource: ModuleSource,
+                          pClass: PClass,
+                          isModuleClass: Boolean): Map<String, Any>? {
+        val runner = Runner(options, moduleSource, pClass, isModuleClass)
         runner.run()
         return runner.properties
     }
 
     class Runner(options: CliBaseOptions,
                  val moduleSource: ModuleSource,
-                 private val pClass: PClass?) : CliCommand(options) {
+                 private val pClass: PClass,
+                 private val isModuleClass: Boolean) : CliCommand(options) {
 
         var properties: Map<String, Any>? = null
 
@@ -24,15 +28,27 @@ class DefaultValueReader {
             val builder = evaluatorBuilder()
             try {
                 builder.build().use { evaluator ->
-                    properties = evaluator.evaluateExpression(
-                        moduleSource,
-                        String.format(
-                            """
+                    try {
+                        properties = evaluator.evaluateExpression(
+                            moduleSource,
+                            if (pClass.isModuleClass) {
+                                String.format(
+                                    """
+                                import("pkl:reflect").Class(module.getClass())
+                                    .properties.map((k,v) -> Pair(k, v.defaultValue))
+                                """.trimIndent()
+                                )
+                            } else {
+                                String.format(
+                                    """
                                 import("pkl:reflect").Class(%s).properties.map((k,v) -> Pair(k, v.defaultValue))
-                            """.trimIndent(),
-                            pClass?.simpleName ?: "module.getClass()"
-                        )
-                    ) as Map<String, Any>
+                                """.trimIndent(), pClass.simpleName
+                                )
+                            }
+                        ) as Map<String, Any>
+                    } catch (t: Throwable) {
+                        // TODO: Skip evaluate errors
+                    }
                 }
             } finally {
                 Closeables.closeQuietly(builder.moduleKeyFactories)

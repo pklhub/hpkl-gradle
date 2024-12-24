@@ -1,6 +1,7 @@
-package io.hpkl.gradle.codegen
+package io.hpkl.gradle.codegen.java
 
 import com.palantir.javapoet.*
+import io.hpkl.gradle.codegen.DefaultValueReader
 import org.pkl.commons.NameMapper
 import org.pkl.core.*
 import org.pkl.core.util.CodeGeneratorUtils
@@ -12,13 +13,14 @@ class JavaCodeGeneratorException(message: String) : RuntimeException(message)
 
 class JavaCodeGenerator(
     private val schema: ModuleSchema,
+    private val moduleSource: ModuleSource,
     private val codegenOptions: JavaCodeGeneratorOptions
 ) {
 
     private val nameMapper = NameMapper(codegenOptions.renames)
     private val defaultValueReader = DefaultValueReader()
 
-    private val defaultValueGenerator: DefaultValueGenerator = DefaultValueGenerator(
+    private val defaultValueGenerator: JavaValueGenerator = JavaValueGenerator(
         codegenOptions, nameMapper
     )
 
@@ -524,10 +526,11 @@ class JavaCodeGenerator(
 
             val defaultValues : Map<String, Any>? =
                 if (codegenOptions.setDefaultValues)
-                    defaultValueReader.findFefaultValues(
+                    defaultValueReader.findDefaultValues(
                         codegenOptions.baseCliBaseOptions,
-                        ModuleSource.uri(schema.moduleUri),
-                        if (!isModuleClass) pClass else null
+                        moduleSource,
+                        pClass,
+                        isModuleClass
                     )
                 else null
 

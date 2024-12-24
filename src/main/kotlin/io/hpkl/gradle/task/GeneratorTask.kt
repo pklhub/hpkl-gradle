@@ -20,15 +20,24 @@ open class GeneratorTask @Inject constructor(
 ) : DefaultTask() {
 
     @OutputDirectories
-    open fun getOutputDirs() : List<Directory> {
+    open fun getJavaOutputDirs() : List<Directory> {
         return this.extension.javaCodeGenerators.map { spec ->
             spec.outputDir.get().dir("java")
+        }.distinct()
+    }
+
+    @OutputDirectories
+    open fun getKotlinOutputDirs() : List<Directory> {
+        return this.extension.kotlinCodeGenerators.map { spec ->
+            spec.outputDir.get().dir("kotlin")
         }.distinct()
     }
 
     @InputFiles
     open fun getInputFiles() : List<File> {
         return this.extension.javaCodeGenerators.flatMap { spec ->
+            spec.transitiveModules.files + spec.getSourceModuleFiles().files
+        }.distinct() + this.extension.kotlinCodeGenerators.flatMap { spec ->
             spec.transitiveModules.files + spec.getSourceModuleFiles().files
         }.distinct()
     }
@@ -47,8 +56,23 @@ open class GeneratorTask @Inject constructor(
 
             if (mainSourceSet != null) {
                 val srcDirs = mainSourceSet.java.srcDirs.toMutableSet()
-                srcDirs.addAll(getOutputDirs().map { it.asFile })
+                srcDirs.addAll(getJavaOutputDirs().map { it.asFile })
                 mainSourceSet.java.setSrcDirs(srcDirs)
+            }
+        }
+        this.extension.kotlinCodeGenerators.forEach{ spec ->
+            val task = KotlinCodeGenTask(spec, this.project, objects, providerFactory)
+            task.runTask()
+
+            val sourceSets : SourceSetContainer? = project.extensions.findByType(
+                SourceSetContainer::class.java
+            )
+            val mainSourceSet = sourceSets?.findByName(SourceSet.MAIN_SOURCE_SET_NAME)
+
+            if (mainSourceSet != null) {
+                val srcDirs = mainSourceSet.allJava.srcDirs.toMutableSet()
+                srcDirs.addAll(getKotlinOutputDirs().map { it.asFile })
+                mainSourceSet.allJava.setSrcDirs(srcDirs)
             }
         }
     }

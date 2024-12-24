@@ -1,16 +1,25 @@
-package io.hpkl.gradle.codegen
+package io.hpkl.gradle.codegen.kotlin
 
-import com.palantir.javapoet.ClassName
-import com.palantir.javapoet.CodeBlock
+
+import com.squareup.kotlinpoet.ClassName
+import com.squareup.kotlinpoet.CodeBlock
 import org.pkl.commons.NameMapper
 import org.pkl.core.*
 import org.pkl.core.util.CodeGeneratorUtils
 import java.util.*
 
-class DefaultValueGenerator(
-    private val options: JavaCodeGeneratorOptions,
+class KotlinValueGenerator (
+    private val options: KotlinCodeGeneratorOptions,
     private val nameMapper: NameMapper
 ) {
+
+    private val dataSizeClass = ClassName.bestGuess(options.dataSizeClass)
+
+    private val durationClass = ClassName.bestGuess(options.durationClass)
+
+    private val durationUnitClass = ClassName.bestGuess(options.durationUnitClass)
+
+    private val dataSizeUnitClass = ClassName.bestGuess(options.dataSizeUnitClass)
 
     fun generate(value: Any, type: PType): CodeBlock {
         return when (value) {
@@ -18,9 +27,9 @@ class DefaultValueGenerator(
             is String -> when(type) {
                 is PType.Alias -> {
                     if (CodeGeneratorUtils.isRepresentableAsEnum(type, null)) {
-                        val className = type.typeAlias.toJavaPoetName()
+                        val className = type.typeAlias.toKotlinPoetName()
                         val builder = CodeBlock.builder()
-                        builder.add(className.canonicalName())
+                        builder.add(className.canonicalName)
                         builder.add("."+value.toString().uppercase(Locale.getDefault()))
                         return builder.build()
                     }
@@ -50,7 +59,7 @@ class DefaultValueGenerator(
         val transformer = argumentTransformer(argumentType)
 
         val builder = CodeBlock.builder()
-        builder.add("List.of(")
+        builder.add("listOf(")
         value.filterNotNull().forEachIndexed { index, v ->
             if (index > 0) {
                 builder.add(",")
@@ -63,10 +72,11 @@ class DefaultValueGenerator(
 
     private fun generateDuration(value: Duration): CodeBlock {
         return when (options.durationClass) {
-            null, "org.pkl.core.Duration" ->
-                CodeBlock.of("new Duration(${value.value}, DurationUnit.${value.unit.name})")
+            "org.pkl.core.Duration" ->
+                CodeBlock.of("%T(${value.value}, DurationUnit.${value.unit.name})", durationClass)
 
-            "java.time.Duration" -> CodeBlock.of("Duration.parse(\"${value.toIsoString()}\")")
+            "java.time.Duration" -> CodeBlock.of("%T.parse(\"${value.toIsoString()}\")", durationClass)
+            "kotlin.time.Duration" -> CodeBlock.of("%T.parseIsoString(\"${value.toIsoString()}\")", durationClass)
             else -> if (options.durationClassConverter != null) {
                 CodeBlock.of("${options.durationClassConverter}(${value.toIsoString()})")
             } else {
@@ -77,8 +87,8 @@ class DefaultValueGenerator(
 
     private fun generateDataSize(value: DataSize): CodeBlock {
         return when (options.dataSizeClass) {
-            null, "org.pkl.core.DataSize" ->
-                CodeBlock.of("new DataSize(${value.value}, DataSizeUnit.${value.unit.name})")
+            "org.pkl.core.DataSize" ->
+                CodeBlock.of("%T(${value.value}, DataSizeUnit.${value.unit.name})", dataSizeClass)
 
             else -> if (options.dataSizeConverter != null) {
                 CodeBlock.of("${options.dataSizeConverter}(${value.inWholeBytes()})")
@@ -100,13 +110,13 @@ class DefaultValueGenerator(
         val entryTransformer = { it : Map.Entry<Any?, Any?> ->
             val builder = CodeBlock.builder()
             builder.add(keyTransformer(it.key))
-            builder.add(",")
+            builder.add(" to ")
             builder.add(valueTransformer(it.value))
             builder.build()
         }
 
         val builder = CodeBlock.builder()
-        builder.add("Map.of(")
+        builder.add("mapOf(")
         value.entries.forEachIndexed { index, v ->
             if (index > 0) {
                 builder.add(",")
@@ -118,10 +128,10 @@ class DefaultValueGenerator(
     }
 
     private fun generateObject(value: PObject, type: PType.Class): CodeBlock {
-        val className = type.pClass.toJavaPoetName()
+        val className = type.pClass.toKotlinPoetName()
 
         val codeBuilder = CodeBlock.builder()
-        codeBuilder.add("new \$T(", className)
+        codeBuilder.add("%T(", className)
 
         codeBuilder.add(
             type.pClass.allProperties.map { (k, p) ->
@@ -136,19 +146,19 @@ class DefaultValueGenerator(
         return codeBuilder.build()
     }
 
-    private fun PClass.toJavaPoetName(): ClassName {
+    private fun PClass.toKotlinPoetName(): ClassName {
         val (packageName, moduleClassName) = nameMapper.map(moduleName)
         return if (isModuleClass) {
-            ClassName.get(packageName, moduleClassName)
+            ClassName(packageName, moduleClassName)
         } else {
-            ClassName.get(packageName, moduleClassName, simpleName)
+            ClassName(packageName, moduleClassName, simpleName)
         }
     }
 
     // generated type is a nested enum class
-    private fun TypeAlias.toJavaPoetName(): ClassName {
+    private fun TypeAlias.toKotlinPoetName(): ClassName {
         val (packageName, moduleClassName) = nameMapper.map(moduleName)
-        return ClassName.get(packageName, moduleClassName, simpleName)
+        return ClassName(packageName, moduleClassName, simpleName)
     }
 
     private fun argumentTransformer(argumentType: PType?): (Any?) -> CodeBlock {
@@ -170,9 +180,9 @@ class DefaultValueGenerator(
 
             is PType.Alias ->
                 when (argumentType.typeAlias.qualifiedName) {
-                    "pkl.base#Int8" -> { it -> CodeBlock.of("(byte)" + it.toString()) }
+                    "pkl.base#Int8" -> { it -> CodeBlock.of(it.toString() + ".toByte()") }
                     "pkl.base#Int16",
-                    "pkl.base#UInt8" -> { it -> CodeBlock.of("(short)" + it.toString()) }
+                    "pkl.base#UInt8" -> { it -> CodeBlock.of(it.toString() + ".toShort()") }
 
                     "pkl.base#Int32",
                     "pkl.base#UInt16" -> { it -> CodeBlock.of(it.toString()) }

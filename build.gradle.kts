@@ -17,6 +17,8 @@ dependencies {
     implementation("org.pkl-lang:pkl-commons-cli:${pklVersion}")
     implementation("org.pkl-lang:pkl-commons:${pklVersion}")
     implementation("com.palantir.javapoet:javapoet:0.6.0")
+    implementation("com.squareup:kotlinpoet:1.6.0")
+    implementation("org.jetbrains.kotlin:kotlin-reflect:1.7.10")
 
     testApi("org.junit.jupiter:junit-jupiter-api:${junitVersion}")
     testApi("org.junit.jupiter:junit-jupiter-engine:${junitVersion}")
@@ -27,6 +29,10 @@ dependencies {
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
     testImplementation("org.assertj:assertj-core:3.26.3")
+
+    testImplementation("org.jetbrains.kotlin:kotlin-compiler-embeddable:1.7.10")
+    testRuntimeOnly("org.jetbrains.kotlin:kotlin-scripting-compiler-embeddable:1.7.10")
+    testRuntimeOnly("org.jetbrains.kotlin:kotlin-script-util:1.7.10")
 }
 
 gradlePlugin {
