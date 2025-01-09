@@ -4,7 +4,7 @@ import io.hpkl.gradle.codegen.java.JavaCodeGeneratorOptions
 import org.pkl.commons.cli.CliBaseOptions
 import java.nio.file.Path
 
-data class CliJavaCodeGeneratorOptions (
+data class CliJavaCodeGeneratorOptions(
     /** Base options shared between CLI commands. */
     val base: CliBaseOptions,
 
@@ -14,15 +14,15 @@ data class CliJavaCodeGeneratorOptions (
     /** The characters to use for indenting generated source code. */
     val indent: String = "  ",
 
-    val durationClass : String?,
+    val durationClass: String?,
 
-    val dataSizeClass : String?,
+    val dataSizeClass: String?,
 
-    val durationUnitClass : String?,
+    val durationUnitClass: String?,
 
-    val dataSizeUnitClass : String?,
+    val dataSizeUnitClass: String?,
 
-    val pairClass : String?,
+    val pairClass: String?,
 
     /**
      * Whether to generate public getter methods and private/protected fields instead of public
@@ -64,7 +64,7 @@ data class CliJavaCodeGeneratorOptions (
 
     val durationClassConverter: String? = null,
 
-    val dataSizeConverter: String? = null
+    val dataSizeConverter: String? = null,
 ) {
     @Suppress("DeprecatedCallableAddReplaceWith")
     @Deprecated("deprecated without replacement")
@@ -92,6 +92,6 @@ data class CliJavaCodeGeneratorOptions (
             setDefaultValues,
             base,
             durationClassConverter,
-            dataSizeConverter
+            dataSizeConverter,
         )
 }

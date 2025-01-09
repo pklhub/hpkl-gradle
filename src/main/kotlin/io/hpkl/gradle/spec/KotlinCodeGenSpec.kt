@@ -9,31 +9,31 @@ import javax.inject.Inject
 import kotlin.time.Duration
 import kotlin.time.DurationUnit
 
-abstract class KotlinCodeGenSpec @Inject constructor(name: String, project: Project, objects: ObjectFactory)
-    : CodeGenSpec(name, project, objects) {
-    val mutableObjects : Property<Boolean> =
+abstract class KotlinCodeGenSpec @Inject constructor(name: String, project: Project, objects: ObjectFactory) :
+    CodeGenSpec(name, project, objects) {
+    val mutableObjects: Property<Boolean> =
         objects.property(Boolean::class.java).convention(false)
 
-    val generateKdoc : Property<Boolean> =
+    val generateKdoc: Property<Boolean> =
         objects.property(Boolean::class.java).convention(false)
 
-    val durationClass : Property<String> =
+    val durationClass: Property<String> =
         objects.property(String::class.java)
             .convention(Duration::class.java.canonicalName)
 
-    val dataSizeClass : Property<String> =
+    val dataSizeClass: Property<String> =
         objects.property(String::class.java)
             .convention(DataSize::class.java.canonicalName)
 
-    val durationUnitClass : Property<String> =
+    val durationUnitClass: Property<String> =
         objects.property(String::class.java)
             .convention(DurationUnit::class.java.canonicalName)
 
-    val dataSizeUnitClass : Property<String> =
+    val dataSizeUnitClass: Property<String> =
         objects.property(String::class.java)
             .convention(DataSizeUnit::class.java.canonicalName)
 
-    val generateAnnotationClasses : Property<Boolean> =
+    val generateAnnotationClasses: Property<Boolean> =
         objects.property(Boolean::class.java).convention(false)
 
     val springConfigAnnotation: Property<String> =

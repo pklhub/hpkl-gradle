@@ -10,8 +10,8 @@ import org.pkl.core.Closeables
 import org.pkl.core.ModuleSource
 import java.io.IOException
 
-class CliJavaCodeGenerator(private val options: CliJavaCodeGeneratorOptions)
-    : CliCommand(options.base) {
+class CliJavaCodeGenerator(private val options: CliJavaCodeGeneratorOptions) :
+    CliCommand(options.base) {
 
     override fun doRun() {
         val builder = evaluatorBuilder()

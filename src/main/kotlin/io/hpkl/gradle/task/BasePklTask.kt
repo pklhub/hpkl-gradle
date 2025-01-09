@@ -21,7 +21,7 @@ abstract class BasePklTask(
     open val spec: BasePklSpec,
     val project: Project,
     val objects: ObjectFactory,
-    val providerFactory: ProviderFactory
+    val providerFactory: ProviderFactory,
 ) {
 
     fun getParsedSettingsModule(): Provider<Any?> {
@@ -80,7 +80,7 @@ abstract class BasePklTask(
                         null,
                         spec.evalTimeout.getOrNull(),
                         mapAndGetOrNull(
-                            spec.moduleCacheDir
+                            spec.moduleCacheDir,
                         ) { it.asFile.toPath() },
                         if (spec.color.getOrElse(false)) Color.ALWAYS else Color.NEVER,
                         spec.noCache.getOrElse(false),
@@ -92,7 +92,7 @@ abstract class BasePklTask(
                         httpProxy = spec.httpProxy.getOrNull(),
                         httpNoProxy = spec.httpNoProxy.getOrElse(emptyList()),
                         externalModuleReaders = emptyMap(),
-                        externalResourceReaders = emptyMap()
+                        externalResourceReaders = emptyMap(),
                     )
             }
             return cachedOptions
@@ -101,7 +101,6 @@ abstract class BasePklTask(
     protected open fun getSourceModulesAsUris(): List<URI> {
         return Collections.emptyList()
     }
-
 
     protected open fun parseModulePath(): List<Path> {
         return spec.modulePath.files.stream().map(File::toPath).collect(Collectors.toList())

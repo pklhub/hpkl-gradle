@@ -1,11 +1,11 @@
 package io.hpkl.gradle.codegen.kotlin
 
+import org.jetbrains.kotlin.cli.common.environment.setIdeaIoUseFallback
 import javax.script.ScriptEngineManager
 import javax.script.ScriptException
 import kotlin.reflect.KClass
 import kotlin.text.RegexOption.MULTILINE
 import kotlin.text.RegexOption.UNIX_LINES
-import org.jetbrains.kotlin.cli.common.environment.setIdeaIoUseFallback
 
 class CompilationFailedException(msg: String?, cause: Throwable? = null) :
     RuntimeException(msg, cause)
@@ -28,7 +28,7 @@ object InMemoryKotlinCompiler {
                 "^(data |open |enum )?class\\s+(\\w+) *(\\([^)]*\\))?.*$\\n((^  .*\\n|^$\\n)*)",
             transform: (String, String) -> Sequence<Pair<String, String>> = { name, body ->
                 sequenceOf(Pair(name, prefix + name)) + body.findClasses("$prefix$name.")
-            }
+            },
         ): Sequence<Pair<String, String>> = // (simpleName1, qualifiedName1), ...
             Regex(regex, setOf(MULTILINE, UNIX_LINES)).findAll(this).flatMap {
                 transform(it.groupValues[nameGroup], it.groupValues[bodyGroup].trimIndent())
@@ -48,7 +48,7 @@ object InMemoryKotlinCompiler {
         val (packageLines, code) = remainder.partition { it.startsWith("package") }
         val packageBlock = packageLines.distinct()
         assert(
-            packageBlock.size <= 1
+            packageBlock.size <= 1,
         ) // everything is in the same package and/or there is no package line
         val sourceText = listOf(packageBlock, importBlock, code).flatten().joinToString("\n")
 

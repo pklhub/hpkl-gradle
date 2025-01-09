@@ -9,20 +9,20 @@ import javax.inject.Inject
 
 open class PklPojoExtension @Inject constructor(objects: ObjectFactory) {
 
-    var javaCodeGenerators: NamedDomainObjectContainer<JavaCodeGenSpec>
-        = objects.domainObjectContainer(JavaCodeGenSpec::class.java)
+    var javaCodeGenerators: NamedDomainObjectContainer<JavaCodeGenSpec> =
+        objects.domainObjectContainer(JavaCodeGenSpec::class.java)
 
-    var kotlinCodeGenerators: NamedDomainObjectContainer<KotlinCodeGenSpec>
-        = objects.domainObjectContainer(KotlinCodeGenSpec::class.java)
+    var kotlinCodeGenerators: NamedDomainObjectContainer<KotlinCodeGenSpec> =
+        objects.domainObjectContainer(KotlinCodeGenSpec::class.java)
 
     fun javaCodeGenerators(
-        action: Action<NamedDomainObjectContainer<JavaCodeGenSpec>>
+        action: Action<NamedDomainObjectContainer<JavaCodeGenSpec>>,
     ) {
         action.execute(javaCodeGenerators)
     }
 
     fun kotlinCodeGenerators(
-        action: Action<NamedDomainObjectContainer<KotlinCodeGenSpec>>
+        action: Action<NamedDomainObjectContainer<KotlinCodeGenSpec>>,
     ) {
         action.execute(kotlinCodeGenerators)
     }

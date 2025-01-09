@@ -11,7 +11,7 @@ class KotlinCodeGenTask(
     override val spec: KotlinCodeGenSpec,
     project: Project,
     objects: ObjectFactory,
-    providerFactory: ProviderFactory
+    providerFactory: ProviderFactory,
 ) : CodeGenTask(spec, project, objects, providerFactory) {
     override fun doRunTask() {
         CliKotlinCodeGenerator(
@@ -32,8 +32,8 @@ class KotlinCodeGenTask(
                 spec.generateAnnotationClasses.get(),
                 spec.setDefaultValues.get(),
                 spec.durationClassConverter.orNull,
-                spec.dataSizeConverter.orNull
-            )
+                spec.dataSizeConverter.orNull,
+            ),
         )
             .run()
     }
