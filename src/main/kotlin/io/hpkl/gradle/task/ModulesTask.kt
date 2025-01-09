@@ -1,6 +1,5 @@
 package io.hpkl.gradle.task
 
-
 import io.hpkl.gradle.spec.ModulesSpec
 import io.hpkl.gradle.utils.PluginUtils
 import io.hpkl.gradle.utils.PluginUtils.parseModuleNotation
@@ -19,12 +18,11 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.stream.Collectors
 
-
 abstract class ModulesTask(
     override val spec: ModulesSpec,
     project: Project,
     objects: ObjectFactory,
-    providerFactory: ProviderFactory
+    providerFactory: ProviderFactory,
 ) : BasePklTask(spec, project, objects, providerFactory) {
 
     private val parsedSourceModulesCache: MutableMap<List<Any>, Pair<List<File>, List<URI>>> = mutableMapOf()
@@ -67,7 +65,6 @@ abstract class ModulesTask(
         get() {
             return spec.projectDir.map { it.asFile.absolutePath }
         }
-
 
     /**
      * A source module can be either a file or a URI. Files can be tracked, so this method splits a
@@ -125,7 +122,7 @@ abstract class ModulesTask(
                         null,
                         listOf(),
                         emptyMap(),
-                        emptyMap()
+                        emptyMap(),
                     )
             }
 

@@ -11,7 +11,6 @@ import java.nio.file.InvalidPathException
 import java.nio.file.Path
 import java.nio.file.Paths
 
-
 object PluginUtils {
     /**
      * Parses the specified source module notation into a "parsed" notation which is then used for
@@ -77,10 +76,12 @@ object PluginUtils {
 
             is FileSystemLocation -> notation.asFile
             else -> throw InvalidUserDataException(
-                ("Unsupported value of type "
-                        + notation.javaClass
-                        + " used as a module path: "
-                        + notation)
+                (
+                    "Unsupported value of type " +
+                        notation.javaClass +
+                        " used as a module path: " +
+                        notation
+                    ),
             )
         }
     }

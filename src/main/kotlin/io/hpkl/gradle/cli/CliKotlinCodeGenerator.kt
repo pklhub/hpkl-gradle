@@ -10,8 +10,8 @@ import org.pkl.core.Closeables
 import org.pkl.core.ModuleSource
 import java.io.IOException
 
-class CliKotlinCodeGenerator(private val options: CliKotlinCodeGeneratorOptions)
-    : CliCommand(options.base) {
+class CliKotlinCodeGenerator(private val options: CliKotlinCodeGeneratorOptions) :
+    CliCommand(options.base) {
 
     override fun doRun() {
         val builder = evaluatorBuilder()

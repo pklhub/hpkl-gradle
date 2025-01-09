@@ -11,13 +11,13 @@ data class KotlinCodeGeneratorOptions(
     /** The characters to use for indenting generated Kotlin code. */
     val indent: String = "  ",
 
-    val durationClass : String = Duration::class.java.name,
+    val durationClass: String = Duration::class.java.name,
 
-    val durationUnitClass : String = DurationUnit::class.java.name,
+    val durationUnitClass: String = DurationUnit::class.java.name,
 
-    val dataSizeClass : String = DataSize::class.java.name,
+    val dataSizeClass: String = DataSize::class.java.name,
 
-    val dataSizeUnitClass : String = DataSizeUnit::class.java.name,
+    val dataSizeUnitClass: String = DataSizeUnit::class.java.name,
 
     /** Whether to preserve Pkl doc comments by generating corresponding KDoc comments. */
     val generateKdoc: Boolean = false,

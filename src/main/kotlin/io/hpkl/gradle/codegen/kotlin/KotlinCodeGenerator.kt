@@ -1,14 +1,43 @@
 package io.hpkl.gradle.codegen.kotlin
 
-import com.squareup.kotlinpoet.*
+import com.squareup.kotlinpoet.ANY
+import com.squareup.kotlinpoet.AnnotationSpec
+import com.squareup.kotlinpoet.BOOLEAN
+import com.squareup.kotlinpoet.BYTE
+import com.squareup.kotlinpoet.ClassName
+import com.squareup.kotlinpoet.CodeBlock
+import com.squareup.kotlinpoet.DOUBLE
+import com.squareup.kotlinpoet.FileSpec
+import com.squareup.kotlinpoet.FunSpec
+import com.squareup.kotlinpoet.INT
+import com.squareup.kotlinpoet.KModifier
+import com.squareup.kotlinpoet.LONG
+import com.squareup.kotlinpoet.ParameterSpec
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
+import com.squareup.kotlinpoet.PropertySpec
+import com.squareup.kotlinpoet.SHORT
+import com.squareup.kotlinpoet.TypeAliasSpec
+import com.squareup.kotlinpoet.TypeName
+import com.squareup.kotlinpoet.TypeSpec
+import com.squareup.kotlinpoet.TypeVariableName
+import com.squareup.kotlinpoet.asClassName
 import io.hpkl.gradle.codegen.DefaultValueReader
 import org.pkl.commons.NameMapper
-import org.pkl.core.*
+import org.pkl.core.ModuleSchema
+import org.pkl.core.ModuleSource
+import org.pkl.core.PClass
+import org.pkl.core.PClassInfo
+import org.pkl.core.PModule
+import org.pkl.core.PNull
+import org.pkl.core.PObject
+import org.pkl.core.PType
+import org.pkl.core.TypeAlias
+import org.pkl.core.TypeParameter
+import org.pkl.core.Version
 import org.pkl.core.util.CodeGeneratorUtils
 import org.pkl.core.util.IoUtils
 import java.net.URI
-import java.util.*
+import java.util.Objects
 
 class KotlinCodeGeneratorException(message: String) : RuntimeException(message)
 
@@ -50,9 +79,7 @@ class KotlinCodeGenerator(
             return mapOf(kotlinFileName to kotlinFile)
         }
 
-
     private val defaultValueReader = DefaultValueReader()
-
 
     private val kotlinFileName: String
         get() = buildString {
@@ -71,7 +98,7 @@ class KotlinCodeGenerator(
         get() {
             if (moduleSchema.moduleUri.scheme == "pkl") {
                 throw KotlinCodeGeneratorException(
-                    "Cannot generate Kotlin code for a Pkl standard library module (`${moduleSchema.moduleUri}`)."
+                    "Cannot generate Kotlin code for a Pkl standard library module (`${moduleSchema.moduleUri}`).",
                 )
             }
 
@@ -83,7 +110,7 @@ class KotlinCodeGenerator(
 
             fun generateCompanionRelatedCode(
                 builder: TypeSpec.Builder,
-                isModuleType: Boolean = false
+                isModuleType: Boolean = false,
             ): TypeSpec.Builder {
                 // ensure that at most one companion object is generated for this type
                 val companionObjectBuilder: Lazy<TypeSpec.Builder> = lazy {
@@ -102,10 +129,10 @@ class KotlinCodeGenerator(
                             "serialVersionUID",
                             Long::class.java,
                             KModifier.PRIVATE,
-                            KModifier.CONST
+                            KModifier.CONST,
                         )
                             .initializer("0L")
-                            .build()
+                            .build(),
                     )
                 }
 
@@ -128,7 +155,7 @@ class KotlinCodeGenerator(
                     continue
                 }
                 moduleType.addType(
-                    generateCompanionRelatedCode(generateTypeSpec(pClass, moduleSchema)).build()
+                    generateCompanionRelatedCode(generateTypeSpec(pClass, moduleSchema)).build(),
                 )
             }
 
@@ -226,7 +253,7 @@ class KotlinCodeGenerator(
                 generateSequence(pClass.superclass) { it.superclass }.firstOrNull { !it.isAbstract }
                     ?: return false
             return nearestNonAbstractAncestor.allProperties.values.count { !it.isHidden } ==
-                    allProperties.size
+                allProperties.size
         }
 
         // besides generating copy method for current class,
@@ -266,7 +293,7 @@ class KotlinCodeGenerator(
                 builder.addStatement(
                     "if (this.$accessor != other.$accessor) return false",
                     propertyName,
-                    propertyName
+                    propertyName,
                 )
             }
 
@@ -288,7 +315,7 @@ class KotlinCodeGenerator(
                 builder.addStatement(
                     "result = 31 * result + %T.hashCode($accessor)",
                     Objects::class,
-                    propertyName
+                    propertyName,
                 )
             }
 
@@ -314,14 +341,14 @@ class KotlinCodeGenerator(
                             }
                             add(")")
                         }
-                        .build()
+                        .build(),
                 )
                 .build()
         }
 
         fun generateDeprecation(
             annotations: Collection<PObject>,
-            addAnnotation: (AnnotationSpec) -> Unit
+            addAnnotation: (AnnotationSpec) -> Unit,
         ) {
             annotations
                 .firstOrNull { it.classInfo == PClassInfo.Deprecated }
@@ -335,7 +362,6 @@ class KotlinCodeGenerator(
         fun generateProperty(propertyName: String, property: PClass.Property): PropertySpec {
             val typeName = property.type.toKotlinPoetName()
             val builder = PropertySpec.builder(propertyName, typeName).initializer("%L", propertyName)
-
 
             generateDeprecation(property.annotations) { builder.addAnnotation(it) }
 
@@ -357,7 +383,7 @@ class KotlinCodeGenerator(
         fun generateSpringBootAnnotations(builder: TypeSpec.Builder) {
             if (isModuleClass) {
                 builder.addAnnotation(
-                    ClassName("org.springframework.boot.context.properties", "ConfigurationProperties")
+                    ClassName("org.springframework.boot.context.properties", "ConfigurationProperties"),
                 )
             } else {
                 // not very efficient to repeat computing module property base types for every class
@@ -379,19 +405,19 @@ class KotlinCodeGenerator(
                     // once in property tree)
                     builder.addAnnotation(
                         AnnotationSpec.builder(
-                            ClassName("org.springframework.boot.context.properties", "ConfigurationProperties")
+                            ClassName("org.springframework.boot.context.properties", "ConfigurationProperties"),
                         )
                             // use "value" instead of "prefix" to entice JavaPoet to generate a single-line
                             // annotation
                             // that can easily be filtered out by JavaCodeGeneratorTest.`spring boot config`
                             .addMember("%S", modulePropertiesWithMatchingType.first().simpleName)
-                            .build()
+                            .build(),
                     )
                 }
             }
         }
 
-        fun generateRegularClass(defaultValues : Map<String, Any>?): TypeSpec.Builder {
+        fun generateRegularClass(defaultValues: Map<String, Any>?): TypeSpec.Builder {
             val builder = TypeSpec.classBuilder(kotlinPoetClassName)
 
             if (options.generateSpringBootConfig) {
@@ -436,7 +462,7 @@ class KotlinCodeGenerator(
             return builder
         }
 
-        fun generateDataClass(defaultValues : Map<String, Any>?): TypeSpec.Builder {
+        fun generateDataClass(defaultValues: Map<String, Any>?): TypeSpec.Builder {
             val builder = TypeSpec.classBuilder(kotlinPoetClassName).addModifiers(KModifier.DATA)
 
             if (options.generateSpringBootConfig) {
@@ -468,23 +494,28 @@ class KotlinCodeGenerator(
             return builder
         }
 
-        val defaultValues : Map<String, Any>? =
-            if (options.setDefaultValues)
+        val defaultValues: Map<String, Any>? =
+            if (options.setDefaultValues) {
                 defaultValueReader.findDefaultValues(
                     options = options.baseCliBaseOptions,
                     moduleSource,
                     pClass,
-                    isModuleClass
+                    isModuleClass,
                 )
-            else null
+            } else {
+                null
+            }
 
-        return if (superclass == null && !pClass.isAbstract && !pClass.isOpen) generateDataClass(defaultValues)
-        else generateRegularClass(defaultValues)
+        return if (superclass == null && !pClass.isAbstract && !pClass.isOpen) {
+            generateDataClass(defaultValues)
+        } else {
+            generateRegularClass(defaultValues)
+        }
     }
 
     private fun generateEnumTypeSpec(
         typeAlias: TypeAlias,
-        stringLiterals: Set<String>
+        stringLiterals: Set<String>,
     ): TypeSpec.Builder {
         val enumConstantToPklNames =
             stringLiterals
@@ -492,33 +523,33 @@ class KotlinCodeGenerator(
                     CodeGeneratorUtils.toEnumConstantName(literal)
                         ?: throw KotlinCodeGeneratorException(
                             "Cannot generate Kotlin enum class for Pkl type alias `${typeAlias.displayName}` " +
-                                    "because string literal type \"$literal\" cannot be converted to a valid enum constant name."
+                                "because string literal type \"$literal\" cannot be converted to a valid enum constant name.",
                         )
                 }
                 .reduce { enumConstantName, firstLiteral, secondLiteral ->
                     throw KotlinCodeGeneratorException(
                         "Cannot generate Kotlin enum class for Pkl type alias `${typeAlias.displayName}` " +
-                                "because string literal types \"$firstLiteral\" and \"$secondLiteral\" " +
-                                "would both be converted to enum constant name `$enumConstantName`."
+                            "because string literal types \"$firstLiteral\" and \"$secondLiteral\" " +
+                            "would both be converted to enum constant name `$enumConstantName`.",
                     )
                 }
 
         val builder =
             TypeSpec.enumBuilder(typeAlias.simpleName)
                 .primaryConstructor(
-                    FunSpec.constructorBuilder().addParameter("value", String::class).build()
+                    FunSpec.constructorBuilder().addParameter("value", String::class).build(),
                 )
                 .addProperty(PropertySpec.builder("value", String::class).initializer("value").build())
                 .addFunction(
                     FunSpec.builder("toString")
                         .addModifiers(KModifier.OVERRIDE)
                         .addStatement("return value")
-                        .build()
+                        .build(),
                 )
         for ((enumConstantName, pklName) in enumConstantToPklNames) {
             builder.addEnumConstant(
                 enumConstantName,
-                TypeSpec.anonymousClassBuilder().addSuperclassConstructorParameter("%S", pklName).build()
+                TypeSpec.anonymousClassBuilder().addSuperclassConstructorParameter("%S", pklName).build(),
             )
         }
 
@@ -530,7 +561,7 @@ class KotlinCodeGenerator(
             TypeAliasSpec.builder(typeAlias.simpleName, typeAlias.aliasedType.toKotlinPoetName())
         for (typeParameter in typeAlias.typeParameters) {
             builder.addTypeVariable(
-                TypeVariableName(typeParameter.name, typeParameter.variance.toKotlinPoet())
+                TypeVariableName(typeParameter.name, typeParameter.variance.toKotlinPoet()),
             )
         }
 
@@ -573,8 +604,8 @@ class KotlinCodeGenerator(
             CodeGeneratorUtils.isRepresentableAsEnum(aliasedType, null) -> {
                 if (isStandardLibraryMember) {
                     throw KotlinCodeGeneratorException(
-                        "Standard library typealias `${qualifiedName}` is not supported by Kotlin code generator." +
-                                " If you think this is an omission, please let us know."
+                        "Standard library typealias `$qualifiedName` is not supported by Kotlin code generator." +
+                            " If you think this is an omission, please let us know.",
                     )
                 }
                 // Kotlin type generated for [this] is a nested enum class
@@ -597,7 +628,8 @@ class KotlinCodeGenerator(
                 when (val classInfo = pClass.info) {
                     PClassInfo.Any -> ANY_NULL
                     PClassInfo.Typed,
-                    PClassInfo.Dynamic -> ANY
+                    PClassInfo.Dynamic,
+                    -> ANY
                     PClassInfo.Boolean -> BOOLEAN
                     PClassInfo.String -> STRING
                     // seems more useful to generate `Double` than `kotlin.Number`
@@ -609,26 +641,28 @@ class KotlinCodeGenerator(
                     PClassInfo.Pair ->
                         KOTLIN_PAIR.parameterizedBy(
                             if (typeArguments.isEmpty()) ANY_NULL else typeArguments[0].toKotlinPoetName(),
-                            if (typeArguments.isEmpty()) ANY_NULL else typeArguments[1].toKotlinPoetName()
+                            if (typeArguments.isEmpty()) ANY_NULL else typeArguments[1].toKotlinPoetName(),
                         )
                     PClassInfo.Collection ->
                         COLLECTION.parameterizedBy(
-                            if (typeArguments.isEmpty()) ANY_NULL else typeArguments[0].toKotlinPoetName()
+                            if (typeArguments.isEmpty()) ANY_NULL else typeArguments[0].toKotlinPoetName(),
                         )
                     PClassInfo.List,
-                    PClassInfo.Listing ->
+                    PClassInfo.Listing,
+                    ->
                         LIST.parameterizedBy(
-                            if (typeArguments.isEmpty()) ANY_NULL else typeArguments[0].toKotlinPoetName()
+                            if (typeArguments.isEmpty()) ANY_NULL else typeArguments[0].toKotlinPoetName(),
                         )
                     PClassInfo.Set ->
                         SET.parameterizedBy(
-                            if (typeArguments.isEmpty()) ANY_NULL else typeArguments[0].toKotlinPoetName()
+                            if (typeArguments.isEmpty()) ANY_NULL else typeArguments[0].toKotlinPoetName(),
                         )
                     PClassInfo.Map,
-                    PClassInfo.Mapping ->
+                    PClassInfo.Mapping,
+                    ->
                         MAP.parameterizedBy(
                             if (typeArguments.isEmpty()) ANY_NULL else typeArguments[0].toKotlinPoetName(),
-                            if (typeArguments.isEmpty()) ANY_NULL else typeArguments[1].toKotlinPoetName()
+                            if (typeArguments.isEmpty()) ANY_NULL else typeArguments[1].toKotlinPoetName(),
                         )
                     PClassInfo.Module -> PMODULE
                     PClassInfo.Class -> PCLASS
@@ -640,7 +674,7 @@ class KotlinCodeGenerator(
                             else ->
                                 throw KotlinCodeGeneratorException(
                                     "Standard library class `${pClass.qualifiedName}` is not supported by Kotlin code generator. " +
-                                            "If you think this is an omission, please let us know."
+                                        "If you think this is an omission, please let us know.",
                                 )
                         }
                 }
@@ -660,11 +694,14 @@ class KotlinCodeGenerator(
                     //   - conversion to signed type doesn't perform range check
                     "pkl.base#Int8" -> BYTE
                     "pkl.base#Int16",
-                    "pkl.base#UInt8" -> SHORT
+                    "pkl.base#UInt8",
+                    -> SHORT
                     "pkl.base#Int32",
-                    "pkl.base#UInt16" -> INT
+                    "pkl.base#UInt16",
+                    -> INT
                     "pkl.base#UInt",
-                    "pkl.base#UInt32" -> LONG
+                    "pkl.base#UInt32",
+                    -> LONG
                     "pkl.base#DurationUnit" -> durationUnitClass
                     "pkl.base#DataSizeUnit" -> dataSizeUnitClass
                     "pkl.base#Uri" -> URI
@@ -684,14 +721,16 @@ class KotlinCodeGenerator(
                 }
             is PType.Function ->
                 throw KotlinCodeGeneratorException(
-                    "Pkl function types are not supported by the Kotlin code generator."
+                    "Pkl function types are not supported by the Kotlin code generator.",
                 )
             is PType.Union ->
-                if (CodeGeneratorUtils.isRepresentableAsString(this)) STRING
-                else
+                if (CodeGeneratorUtils.isRepresentableAsString(this)) {
+                    STRING
+                } else {
                     throw KotlinCodeGeneratorException(
-                        "Pkl union types are not supported by the Kotlin code generator."
+                        "Pkl union types are not supported by the Kotlin code generator.",
                     )
+                }
 
             // occurs on RHS of generic type aliases
             is PType.TypeVariable -> TypeVariableName(typeParameter.name)
@@ -704,11 +743,12 @@ class KotlinCodeGenerator(
     private val nameMapper = NameMapper(options.renames)
 
     private val defaultValueGenerator: KotlinValueGenerator = KotlinValueGenerator(
-        options, nameMapper
+        options,
+        nameMapper,
     )
 
-    private fun isAnnotation(pClass: PClass) : Boolean {
-        var clazz : PClass? = pClass
+    private fun isAnnotation(pClass: PClass): Boolean {
+        var clazz: PClass? = pClass
         while (clazz != null) {
             val (packageName, _) = nameMapper.map(clazz.moduleName)
             if (packageName == "pkl" && clazz.simpleName == "Annotation") {

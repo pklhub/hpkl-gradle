@@ -3,25 +3,32 @@ package io.hpkl.gradle.codegen.java
 import com.palantir.javapoet.ClassName
 import com.palantir.javapoet.CodeBlock
 import org.pkl.commons.NameMapper
-import org.pkl.core.*
+import org.pkl.core.DataSize
+import org.pkl.core.Duration
+import org.pkl.core.PClass
+import org.pkl.core.PClassInfo
+import org.pkl.core.PNull
+import org.pkl.core.PObject
+import org.pkl.core.PType
+import org.pkl.core.TypeAlias
 import org.pkl.core.util.CodeGeneratorUtils
-import java.util.*
+import java.util.Locale
 
 class JavaValueGenerator(
     private val options: JavaCodeGeneratorOptions,
-    private val nameMapper: NameMapper
+    private val nameMapper: NameMapper,
 ) {
 
     fun generate(value: Any, type: PType): CodeBlock {
         return when (value) {
             is PNull -> return CodeBlock.of("null")
-            is String -> when(type) {
+            is String -> when (type) {
                 is PType.Alias -> {
                     if (CodeGeneratorUtils.isRepresentableAsEnum(type, null)) {
                         val className = type.typeAlias.toJavaPoetName()
                         val builder = CodeBlock.builder()
                         builder.add(className.canonicalName())
-                        builder.add("."+value.toString().uppercase(Locale.getDefault()))
+                        builder.add("." + value.toString().uppercase(Locale.getDefault()))
                         return builder.build()
                     }
                     return CodeBlock.of("\"${value}\"")
@@ -44,8 +51,11 @@ class JavaValueGenerator(
     }
 
     private fun generateList(value: List<*>, type: PType): CodeBlock {
-        val argumentType = if (type.typeArguments.isNotEmpty())
-            type.typeArguments[0] else null
+        val argumentType = if (type.typeArguments.isNotEmpty()) {
+            type.typeArguments[0]
+        } else {
+            null
+        }
 
         val transformer = argumentTransformer(argumentType)
 
@@ -89,15 +99,20 @@ class JavaValueGenerator(
     }
 
     private fun generateMap(value: Map<*, *>, type: PType): CodeBlock {
-        val keyArgumentType = if (type.typeArguments.isNotEmpty())
-            type.typeArguments[0] else null
-        val valueArgumentType = if (type.typeArguments.isNotEmpty() && type.typeArguments.size > 1)
-            type.typeArguments[1] else null
-
+        val keyArgumentType = if (type.typeArguments.isNotEmpty()) {
+            type.typeArguments[0]
+        } else {
+            null
+        }
+        val valueArgumentType = if (type.typeArguments.isNotEmpty() && type.typeArguments.size > 1) {
+            type.typeArguments[1]
+        } else {
+            null
+        }
 
         val keyTransformer = argumentTransformer(keyArgumentType)
         val valueTransformer = argumentTransformer(valueArgumentType)
-        val entryTransformer = { it : Map.Entry<Any?, Any?> ->
+        val entryTransformer = { it: Map.Entry<Any?, Any?> ->
             val builder = CodeBlock.builder()
             builder.add(keyTransformer(it.key))
             builder.add(",")
@@ -128,7 +143,7 @@ class JavaValueGenerator(
                 value.properties[k]?.let {
                     generate(it, p.type)
                 } ?: CodeBlock.of("null")
-            }.joinToString(", ")
+            }.joinToString(", "),
         )
 
         codeBuilder.add(")")
@@ -152,38 +167,45 @@ class JavaValueGenerator(
     }
 
     private fun argumentTransformer(argumentType: PType?): (Any?) -> CodeBlock {
-        return nullable(when (argumentType) {
-            is PType.Class -> when (argumentType.pClass.info) {
-                PClassInfo.Typed -> { it -> generateObject(it as PObject, argumentType)}
-                PClassInfo.String -> { it -> CodeBlock.of("\"$it\"") }
-                PClassInfo.Duration -> { it -> generateDuration(it as Duration) }
-                PClassInfo.DataSize -> { it -> generateDataSize(it as DataSize) }
-                PClassInfo.List,
-                PClassInfo.Listing -> { it -> generateList(it as List<*>, argumentType) }
-                PClassInfo.Int -> { it -> CodeBlock.of(it.toString() + "L") }
-                PClassInfo.Float,
-                PClassInfo.Boolean -> { it -> CodeBlock.of(it.toString()) }
-                else -> {
-                    { generateObject(it as PObject, argumentType) }
+        return nullable(
+            when (argumentType) {
+                is PType.Class -> when (argumentType.pClass.info) {
+                    PClassInfo.Typed -> { it -> generateObject(it as PObject, argumentType) }
+                    PClassInfo.String -> { it -> CodeBlock.of("\"$it\"") }
+                    PClassInfo.Duration -> { it -> generateDuration(it as Duration) }
+                    PClassInfo.DataSize -> { it -> generateDataSize(it as DataSize) }
+                    PClassInfo.List,
+                    PClassInfo.Listing,
+                    -> { it -> generateList(it as List<*>, argumentType) }
+                    PClassInfo.Int -> { it -> CodeBlock.of(it.toString() + "L") }
+                    PClassInfo.Float,
+                    PClassInfo.Boolean,
+                    -> { it -> CodeBlock.of(it.toString()) }
+                    else -> {
+                        { generateObject(it as PObject, argumentType) }
+                    }
                 }
-            }
 
-            is PType.Alias ->
-                when (argumentType.typeAlias.qualifiedName) {
-                    "pkl.base#Int8" -> { it -> CodeBlock.of("(byte)" + it.toString()) }
-                    "pkl.base#Int16",
-                    "pkl.base#UInt8" -> { it -> CodeBlock.of("(short)" + it.toString()) }
+                is PType.Alias ->
+                    when (argumentType.typeAlias.qualifiedName) {
+                        "pkl.base#Int8" -> { it -> CodeBlock.of("(byte)" + it.toString()) }
+                        "pkl.base#Int16",
+                        "pkl.base#UInt8",
+                        -> { it -> CodeBlock.of("(short)" + it.toString()) }
 
-                    "pkl.base#Int32",
-                    "pkl.base#UInt16" -> { it -> CodeBlock.of(it.toString()) }
+                        "pkl.base#Int32",
+                        "pkl.base#UInt16",
+                        -> { it -> CodeBlock.of(it.toString()) }
 
-                    "pkl.base#UInt",
-                    "pkl.base#UInt32" -> { it -> CodeBlock.of(it.toString() + "L") }
+                        "pkl.base#UInt",
+                        "pkl.base#UInt32",
+                        -> { it -> CodeBlock.of(it.toString() + "L") }
 
-                    else -> { it -> CodeBlock.of(it.toString()) }
-                }
-            else -> { it -> CodeBlock.of(it.toString()) }
-        })
+                        else -> { it -> CodeBlock.of(it.toString()) }
+                    }
+                else -> { it -> CodeBlock.of(it.toString()) }
+            },
+        )
     }
 
     private fun nullable(transformer: (Any?) -> CodeBlock): (Any?) -> CodeBlock = { v ->

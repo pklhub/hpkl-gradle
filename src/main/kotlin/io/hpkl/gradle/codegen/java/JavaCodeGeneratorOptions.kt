@@ -6,15 +6,15 @@ data class JavaCodeGeneratorOptions(
     /** The characters to use for indenting generated Java code. */
     val indent: String = "  ",
 
-    val durationClass : String?,
+    val durationClass: String?,
 
-    val durationUnitClass : String?,
+    val durationUnitClass: String?,
 
-    val dataSizeClass : String?,
+    val dataSizeClass: String?,
 
-    val dataSizeUnitClass : String?,
+    val dataSizeUnitClass: String?,
 
-    val pairClass : String?,
+    val pairClass: String?,
 
     /**
      * Whether to generate public getter methods and protected final fields instead of public final
@@ -56,5 +56,5 @@ data class JavaCodeGeneratorOptions(
 
     val durationClassConverter: String?,
 
-    val dataSizeConverter: String?
+    val dataSizeConverter: String?,
 )

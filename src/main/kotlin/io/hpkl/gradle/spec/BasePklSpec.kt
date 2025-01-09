@@ -18,11 +18,11 @@ abstract class BasePklSpec(val name: String, val project: Project, val objects: 
 
     val allowedModules: ListProperty<String> =
         objects.listProperty(String::class.java).convention(
-            listOf("repl:", "file:", "modulepath:", "https:", "pkl:", "package:", "projectpackage:")
+            listOf("repl:", "file:", "modulepath:", "https:", "pkl:", "package:", "projectpackage:"),
         )
 
     val allowedResources = objects.listProperty(String::class.java).convention(
-        listOf("env:", "prop:", "file:", "modulepath:", "https:", "package:")
+        listOf("env:", "prop:", "file:", "modulepath:", "https:", "package:"),
     )
 
     val environmentVariables: MapProperty<String, String> =
@@ -37,7 +37,7 @@ abstract class BasePklSpec(val name: String, val project: Project, val objects: 
 
     val evalRootDir: DirectoryProperty =
         objects.directoryProperty().convention(
-            project.rootProject.layout.projectDirectory
+            project.rootProject.layout.projectDirectory,
         )
 
     val moduleCacheDir: DirectoryProperty = objects.directoryProperty().let {

@@ -1,9 +1,9 @@
 package io.hpkl.gradle
 
-import kotlin.io.path.listDirectoryEntries
-import kotlin.io.path.readText
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import kotlin.io.path.listDirectoryEntries
+import kotlin.io.path.readText
 
 class JavaCodeGeneratorsTest : AbstractTest() {
     @Test
@@ -29,7 +29,7 @@ class JavaCodeGeneratorsTest : AbstractTest() {
             """
       |public final class Mod {
       |  public @Nonnull Object other = 42;
-    """
+    """,
         )
 
         checkTextContains(
@@ -39,7 +39,7 @@ class JavaCodeGeneratorsTest : AbstractTest() {
       |    public @Nonnull String name = "defaultName";
       |
       |    public @Nonnull List<Address> addresses = List.of();
-    """
+    """,
         )
 
         checkTextContains(
@@ -63,7 +63,7 @@ class JavaCodeGeneratorsTest : AbstractTest() {
       |    public @Nonnull Duration timeout = Duration.parse("PT1S");
       |
       |    public @Nonnull DataSize size = org.springframework.util.unit.DataSize.ofBytes(1000);
-    """
+    """,
         )
     }
 
@@ -121,7 +121,7 @@ class JavaCodeGeneratorsTest : AbstractTest() {
           }
         }
       }      
-    """
+    """,
         )
     }
 
@@ -181,7 +181,7 @@ class JavaCodeGeneratorsTest : AbstractTest() {
         
   
         other = 42
-      """
+      """,
         )
     }
 }

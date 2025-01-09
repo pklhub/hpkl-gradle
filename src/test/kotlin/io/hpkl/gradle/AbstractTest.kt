@@ -1,7 +1,5 @@
 package io.hpkl.gradle
 
-import java.net.URI
-import java.nio.file.Path
 import org.assertj.core.api.Assertions.assertThat
 import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.GradleRunner
@@ -10,6 +8,8 @@ import org.junit.jupiter.api.io.TempDir
 import org.pkl.commons.createParentDirectories
 import org.pkl.commons.readString
 import org.pkl.commons.writeString
+import java.net.URI
+import java.nio.file.Path
 
 abstract class AbstractTest {
 //    private val gradleVersion: String? = System.getProperty("testGradleVersion")
@@ -20,7 +20,6 @@ abstract class AbstractTest {
     @TempDir protected lateinit var testProjectDir: Path
 
     protected fun runTask(taskName: String, expectFailure: Boolean = false): BuildResult {
-
         val runner =
             GradleRunner.create()
                 .withProjectDir(testProjectDir.toFile())

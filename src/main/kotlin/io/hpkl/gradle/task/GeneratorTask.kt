@@ -14,27 +14,27 @@ import java.io.File
 import javax.inject.Inject
 
 open class GeneratorTask @Inject constructor(
-    private val extension : PklPojoExtension,
+    private val extension: PklPojoExtension,
     private val objects: ObjectFactory,
-    private val providerFactory: ProviderFactory
+    private val providerFactory: ProviderFactory,
 ) : DefaultTask() {
 
     @OutputDirectories
-    open fun getJavaOutputDirs() : List<Directory> {
+    open fun getJavaOutputDirs(): List<Directory> {
         return this.extension.javaCodeGenerators.map { spec ->
             spec.outputDir.get().dir("java")
         }.distinct()
     }
 
     @OutputDirectories
-    open fun getKotlinOutputDirs() : List<Directory> {
+    open fun getKotlinOutputDirs(): List<Directory> {
         return this.extension.kotlinCodeGenerators.map { spec ->
             spec.outputDir.get().dir("kotlin")
         }.distinct()
     }
 
     @InputFiles
-    open fun getInputFiles() : List<File> {
+    open fun getInputFiles(): List<File> {
         return this.extension.javaCodeGenerators.flatMap { spec ->
             spec.transitiveModules.files + spec.getSourceModuleFiles().files
         }.distinct() + this.extension.kotlinCodeGenerators.flatMap { spec ->
@@ -45,12 +45,12 @@ open class GeneratorTask @Inject constructor(
     @TaskAction
     fun runTask() {
         outputs.previousOutputFiles.forEach(File::delete)
-        this.extension.javaCodeGenerators.forEach{ spec ->
+        this.extension.javaCodeGenerators.forEach { spec ->
             val task = JavaCodeGenTask(spec, this.project, objects, providerFactory)
             task.runTask()
 
-            val sourceSets : SourceSetContainer? = project.extensions.findByType(
-                SourceSetContainer::class.java
+            val sourceSets: SourceSetContainer? = project.extensions.findByType(
+                SourceSetContainer::class.java,
             )
             val mainSourceSet = sourceSets?.findByName(SourceSet.MAIN_SOURCE_SET_NAME)
 
@@ -60,12 +60,12 @@ open class GeneratorTask @Inject constructor(
                 mainSourceSet.java.setSrcDirs(srcDirs)
             }
         }
-        this.extension.kotlinCodeGenerators.forEach{ spec ->
+        this.extension.kotlinCodeGenerators.forEach { spec ->
             val task = KotlinCodeGenTask(spec, this.project, objects, providerFactory)
             task.runTask()
 
-            val sourceSets : SourceSetContainer? = project.extensions.findByType(
-                SourceSetContainer::class.java
+            val sourceSets: SourceSetContainer? = project.extensions.findByType(
+                SourceSetContainer::class.java,
             )
             val mainSourceSet = sourceSets?.findByName(SourceSet.MAIN_SOURCE_SET_NAME)
 

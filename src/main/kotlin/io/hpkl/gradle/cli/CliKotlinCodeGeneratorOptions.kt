@@ -1,11 +1,10 @@
 package io.hpkl.gradle.cli
 
-import io.hpkl.gradle.codegen.java.JavaCodeGeneratorOptions
 import io.hpkl.gradle.codegen.kotlin.KotlinCodeGeneratorOptions
 import org.pkl.commons.cli.CliBaseOptions
 import java.nio.file.Path
 
-class CliKotlinCodeGeneratorOptions (
+class CliKotlinCodeGeneratorOptions(
     /** Base options shared between CLI commands. */
     val base: CliBaseOptions,
 
@@ -15,13 +14,13 @@ class CliKotlinCodeGeneratorOptions (
     /** The characters to use for indenting generated source code. */
     val indent: String = "  ",
 
-    val durationClass : String,
+    val durationClass: String,
 
-    val dataSizeClass : String,
+    val dataSizeClass: String,
 
-    val durationUnitClass : String,
+    val durationUnitClass: String,
 
-    val dataSizeUnitClass : String,
+    val dataSizeUnitClass: String,
 
     val mutableObjects: Boolean = false,
 
@@ -51,7 +50,7 @@ class CliKotlinCodeGeneratorOptions (
 
     val durationClassConverter: String? = null,
 
-    val dataSizeConverter: String? = null
+    val dataSizeConverter: String? = null,
 ) {
     @Suppress("DeprecatedCallableAddReplaceWith")
     @Deprecated("deprecated without replacement")
@@ -63,7 +62,7 @@ class CliKotlinCodeGeneratorOptions (
             durationClass = durationClass,
             durationUnitClass = durationUnitClass,
             dataSizeClass = dataSizeClass,
-            dataSizeUnitClass =dataSizeUnitClass,
+            dataSizeUnitClass = dataSizeUnitClass,
             generateKdoc = generateKdoc,
             mutableObjects = mutableObjects,
             generateSpringBootConfig = generateSpringBootConfig,
@@ -74,6 +73,6 @@ class CliKotlinCodeGeneratorOptions (
             setDefaultValues = setDefaultValues,
             baseCliBaseOptions = base,
             durationClassConverter = durationClassConverter,
-            dataSizeConverter = dataSizeConverter
+            dataSizeConverter = dataSizeConverter,
         )
 }
