@@ -6,12 +6,11 @@ import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.ProviderFactory
 
-
 abstract class CodeGenTask(
     override val spec: CodeGenSpec,
     project: Project,
     objects: ObjectFactory,
-    providerFactory: ProviderFactory
+    providerFactory: ProviderFactory,
 ) : ModulesTask(spec, project, objects, providerFactory) {
     val outputDir: DirectoryProperty
         get() = this.spec.outputDir

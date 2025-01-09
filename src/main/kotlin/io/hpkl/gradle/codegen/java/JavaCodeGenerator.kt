@@ -1,11 +1,31 @@
 package io.hpkl.gradle.codegen.java
 
-import com.palantir.javapoet.*
+import com.palantir.javapoet.AnnotationSpec
+import com.palantir.javapoet.ArrayTypeName
+import com.palantir.javapoet.ClassName
+import com.palantir.javapoet.CodeBlock
+import com.palantir.javapoet.FieldSpec
+import com.palantir.javapoet.JavaFile
+import com.palantir.javapoet.MethodSpec
+import com.palantir.javapoet.ParameterSpec
+import com.palantir.javapoet.ParameterizedTypeName
+import com.palantir.javapoet.TypeName
+import com.palantir.javapoet.TypeSpec
+import com.palantir.javapoet.WildcardTypeName
 import io.hpkl.gradle.codegen.DefaultValueReader
 import org.pkl.commons.NameMapper
-import org.pkl.core.*
+import org.pkl.core.ModuleSchema
+import org.pkl.core.ModuleSource
+import org.pkl.core.PClass
+import org.pkl.core.PClassInfo
+import org.pkl.core.PModule
+import org.pkl.core.PNull
+import org.pkl.core.PObject
+import org.pkl.core.PType
+import org.pkl.core.TypeAlias
+import org.pkl.core.Version
 import org.pkl.core.util.CodeGeneratorUtils
-import java.util.*
+import java.util.Objects
 import java.util.regex.Pattern
 import javax.lang.model.element.Modifier
 
@@ -14,14 +34,15 @@ class JavaCodeGeneratorException(message: String) : RuntimeException(message)
 class JavaCodeGenerator(
     private val schema: ModuleSchema,
     private val moduleSource: ModuleSource,
-    private val codegenOptions: JavaCodeGeneratorOptions
+    private val codegenOptions: JavaCodeGeneratorOptions,
 ) {
 
     private val nameMapper = NameMapper(codegenOptions.renames)
     private val defaultValueReader = DefaultValueReader()
 
     private val defaultValueGenerator: JavaValueGenerator = JavaValueGenerator(
-        codegenOptions, nameMapper
+        codegenOptions,
+        nameMapper,
     )
 
     private val dataSizeClass = ClassName.bestGuess(codegenOptions.dataSizeClass)
@@ -30,20 +51,20 @@ class JavaCodeGenerator(
 
     private val durationUnitClass = ClassName.get(
         Class.forName(
-            codegenOptions.durationUnitClass
-        )
+            codegenOptions.durationUnitClass,
+        ),
     )
 
     private val dataSizeUnitClass = ClassName.get(
         Class.forName(
-            codegenOptions.dataSizeUnitClass
-        )
+            codegenOptions.dataSizeUnitClass,
+        ),
     )
 
     private val pairClass = ClassName.get(
         Class.forName(
-            codegenOptions.pairClass
-        )
+            codegenOptions.pairClass,
+        ),
     )
 
     companion object {
@@ -67,7 +88,7 @@ class JavaCodeGenerator(
             Annotation `$fqn` is not a valid Java class.
             The name of the annotation should be the canonical Java name of the class, for example, `com.example.Foo`.
           """
-                        .trimIndent()
+                        .trimIndent(),
                 )
             }
             val packageName = fqn.substring(0, index)
@@ -112,7 +133,7 @@ class JavaCodeGenerator(
         get() {
             if (schema.moduleUri.scheme == "pkl") {
                 throw JavaCodeGeneratorException(
-                    "Cannot generate Java code for a Pkl standard library module (`${schema.moduleUri}`)."
+                    "Cannot generate Java code for a Pkl standard library module (`${schema.moduleUri}`).",
                 )
             }
 
@@ -121,7 +142,7 @@ class JavaCodeGenerator(
 
             for (pClass in schema.classes.values) {
                 if (!codegenOptions.generateAnnotationClasses && isAnnotation(pClass)) {
-                        continue
+                    continue
                 }
                 moduleClass.addType(generateTypeSpec(pClass, schema).build())
             }
@@ -136,8 +157,11 @@ class JavaCodeGenerator(
             // nested classes
             if (pModuleClass.superclass!!.info == PClassInfo.Module) {
                 val modifier =
-                    if (pModuleClass.isOpen || pModuleClass.isAbstract) Modifier.PROTECTED
-                    else Modifier.PRIVATE
+                    if (pModuleClass.isOpen || pModuleClass.isAbstract) {
+                        Modifier.PROTECTED
+                    } else {
+                        Modifier.PRIVATE
+                    }
                 moduleClass.addMethod(appendPropertyMethod().addModifiers(modifier).build())
             }
 
@@ -166,14 +190,14 @@ class JavaCodeGenerator(
         fun addCtorParameter(
             builder: MethodSpec.Builder,
             propJavaName: String,
-            property: PClass.Property
+            property: PClass.Property,
         ) {
             val paramBuilder = ParameterSpec.builder(property.type.toJavaPoetName(), propJavaName)
             if (namedAnnotationName != null) {
                 paramBuilder.addAnnotation(
                     AnnotationSpec.builder(namedAnnotationName)
                         .addMember("value", "\$S", property.simpleName)
-                        .build()
+                        .build(),
                 )
             }
             builder.addParameter(paramBuilder.build())
@@ -188,7 +212,7 @@ class JavaCodeGenerator(
                             isInstantiable -> Modifier.PUBLIC
                             pClass.isAbstract || pClass.isOpen -> Modifier.PROTECTED
                             else -> Modifier.PRIVATE
-                        }
+                        },
                     )
 
             if (superProperties.isNotEmpty()) {
@@ -219,7 +243,7 @@ class JavaCodeGenerator(
                         isInstantiable -> Modifier.PUBLIC
                         pClass.isAbstract || pClass.isOpen -> Modifier.PROTECTED
                         else -> Modifier.PRIVATE
-                    }
+                    },
                 )
 
             return builder.build()
@@ -244,7 +268,7 @@ class JavaCodeGenerator(
                     "if (!\$T.equals(this.$accessor, other.$accessor)) return false",
                     Objects::class.java,
                     propertyName,
-                    propertyName
+                    propertyName,
                 )
             }
 
@@ -265,7 +289,7 @@ class JavaCodeGenerator(
                 builder.addStatement(
                     "result = 31 * result + \$T.hashCode($accessor)",
                     Objects::class.java,
-                    propertyName
+                    propertyName,
                 )
             }
 
@@ -287,7 +311,7 @@ class JavaCodeGenerator(
                 appendBuilder.addStatement(
                     "appendProperty(builder, \$S, this.\$N)",
                     propertyName,
-                    propertyName
+                    propertyName,
                 )
             }
 
@@ -296,7 +320,7 @@ class JavaCodeGenerator(
                     "\$T builder = new \$T(\$L)",
                     StringBuilder::class.java,
                     StringBuilder::class.java,
-                    builderSize
+                    builderSize,
                 )
                 .addStatement("builder.append(\$T.class.getSimpleName()).append(\" {\")", javaPoetClassName)
                 .addCode(appendBuilder.build())
@@ -320,7 +344,7 @@ class JavaCodeGenerator(
             annotations: Collection<PObject>,
             hasJavadoc: Boolean,
             addAnnotation: (Class<*>) -> Unit,
-            addJavadoc: (String) -> Unit
+            addJavadoc: (String) -> Unit,
         ) {
             annotations
                 .firstOrNull { it.classInfo == PClassInfo.Deprecated }
@@ -349,14 +373,14 @@ class JavaCodeGenerator(
 
             if (codegenOptions.generateGetters) {
                 builder.addModifiers(
-                    if (pClass.isAbstract || pClass.isOpen) Modifier.PROTECTED else Modifier.PRIVATE
+                    if (pClass.isAbstract || pClass.isOpen) Modifier.PROTECTED else Modifier.PRIVATE,
                 )
             } else {
                 generateDeprecation(
                     property.annotations,
                     hasJavadoc,
                     { builder.addAnnotation(it) },
-                    { builder.addJavadoc(it) }
+                    { builder.addJavadoc(it) },
                 )
                 builder.addModifiers(Modifier.PUBLIC)
             }
@@ -378,16 +402,16 @@ class JavaCodeGenerator(
         fun generateGetter(
             propertyName: String,
             property: PClass.Property,
-            isOverridden: Boolean
+            isOverridden: Boolean,
         ): MethodSpec {
             val propertyType = property.type
             val isBooleanProperty =
                 propertyType is PType.Class && propertyType.pClass.info == PClassInfo.Boolean
             val methodName =
                 (if (isBooleanProperty) "is" else "get") +
-                        // can use original name here (property.name rather than propertyName)
-                        // because getter name cannot possibly conflict with reserved words
-                        property.simpleName.replaceFirstChar { it.titlecaseChar() }
+                    // can use original name here (property.name rather than propertyName)
+                    // because getter name cannot possibly conflict with reserved words
+                    property.simpleName.replaceFirstChar { it.titlecaseChar() }
 
             val builder =
                 MethodSpec.methodBuilder(methodName)
@@ -408,7 +432,7 @@ class JavaCodeGenerator(
                 property.annotations,
                 hasJavadoc,
                 { builder.addAnnotation(it) },
-                { builder.addJavadoc(it) }
+                { builder.addJavadoc(it) },
             )
 
             return builder.build()
@@ -418,7 +442,7 @@ class JavaCodeGenerator(
         fun generateSetter(
             propertyName: String,
             property: PClass.Property,
-            isOverridden: Boolean
+            isOverridden: Boolean,
         ): MethodSpec {
             val methodName =
                 "set" + property.simpleName.replaceFirstChar { it.titlecaseChar() }
@@ -443,7 +467,7 @@ class JavaCodeGenerator(
                 property.annotations,
                 hasJavadoc,
                 { builder.addAnnotation(it) },
-                { builder.addJavadoc(it) }
+                { builder.addJavadoc(it) },
             )
 
             return builder.build()
@@ -462,7 +486,7 @@ class JavaCodeGenerator(
                 property.annotations,
                 false,
                 { methodBuilder.addAnnotation(it) },
-                { methodBuilder.addJavadoc(it) }
+                { methodBuilder.addJavadoc(it) },
             )
 
             if (!codegenOptions.generateSetters) {
@@ -503,19 +527,19 @@ class JavaCodeGenerator(
             if (codegenOptions.generateSpringBootConfig) {
                 val configAnnotation = pClass.annotations.firstOrNull {
                     it.classInfo.simpleName == codegenOptions.springConfigAnnotation &&
-                            it.properties.containsKey("prefix")
-
+                        it.properties.containsKey("prefix")
                 }
 
                 if (configAnnotation != null) {
                     val prefix = configAnnotation.properties["prefix"]
                     builder.addAnnotation(
                         AnnotationSpec.builder(
-                            ClassName.get("org.springframework.boot.context.properties", "ConfigurationProperties")
+                            ClassName.get("org.springframework.boot.context.properties", "ConfigurationProperties"),
                         ).addMember(
                             "prefix",
-                            "\$S", prefix
-                        ).build()
+                            "\$S",
+                            prefix,
+                        ).build(),
                     )
                 }
             }
@@ -523,20 +547,20 @@ class JavaCodeGenerator(
 
         @Suppress("DuplicatedCode")
         fun generateClass(): TypeSpec.Builder {
-
-            val defaultValues : Map<String, Any>? =
-                if (codegenOptions.setDefaultValues)
+            val defaultValues: Map<String, Any>? =
+                if (codegenOptions.setDefaultValues) {
                     defaultValueReader.findDefaultValues(
                         codegenOptions.baseCliBaseOptions,
                         moduleSource,
                         pClass,
-                        isModuleClass
+                        isModuleClass,
                     )
-                else null
+                } else {
+                    null
+                }
 
             val builder =
                 TypeSpec.classBuilder(javaPoetClassName.simpleName()).addModifiers(Modifier.PUBLIC)
-
 
             // stateless final module classes are non-instantiable by choice
             val isInstantiable =
@@ -557,7 +581,7 @@ class JavaCodeGenerator(
                 pClass.annotations,
                 hasJavadoc,
                 { builder.addAnnotation(it) },
-                { builder.addJavadoc(it) }
+                { builder.addJavadoc(it) },
             )
 
             if (!isModuleClass) {
@@ -627,7 +651,7 @@ class JavaCodeGenerator(
 
     private fun generateEnumTypeSpec(
         typeAlias: TypeAlias,
-        stringLiterals: Set<String>
+        stringLiterals: Set<String>,
     ): TypeSpec.Builder {
         val enumConstantToPklNames =
             stringLiterals
@@ -635,14 +659,14 @@ class JavaCodeGenerator(
                     CodeGeneratorUtils.toEnumConstantName(literal)
                         ?: throw JavaCodeGeneratorException(
                             "Cannot generate Java enum class for Pkl type alias `${typeAlias.displayName}` " +
-                                    "because string literal type \"$literal\" cannot be converted to a valid enum constant name."
+                                "because string literal type \"$literal\" cannot be converted to a valid enum constant name.",
                         )
                 }
                 .reduce { enumConstantName, firstLiteral, secondLiteral ->
                     throw JavaCodeGeneratorException(
                         "Cannot generate Java enum class for Pkl type alias `${typeAlias.displayName}` " +
-                                "because string literal types \"$firstLiteral\" and \"$secondLiteral\" " +
-                                "would both be converted to enum constant name `$enumConstantName`."
+                            "because string literal types \"$firstLiteral\" and \"$secondLiteral\" " +
+                            "would both be converted to enum constant name `$enumConstantName`.",
                     )
                 }
 
@@ -655,7 +679,7 @@ class JavaCodeGenerator(
                         .addModifiers(Modifier.PRIVATE)
                         .addParameter(String::class.java, "value")
                         .addStatement("this.value = value")
-                        .build()
+                        .build(),
                 )
                 .addMethod(
                     MethodSpec.methodBuilder("toString")
@@ -663,13 +687,13 @@ class JavaCodeGenerator(
                         .addAnnotation(Override::class.java)
                         .returns(String::class.java)
                         .addStatement("return this.value")
-                        .build()
+                        .build(),
                 )
 
         for ((enumConstantName, pklName) in enumConstantToPklNames) {
             builder.addEnumConstant(
                 enumConstantName,
-                TypeSpec.anonymousClassBuilder("\$S", pklName).build()
+                TypeSpec.anonymousClassBuilder("\$S", pklName).build(),
             )
         }
 
@@ -693,7 +717,7 @@ class JavaCodeGenerator(
             .addStatement(
                 "\$T lines = \$T.toString(value).split(\"\\n\")",
                 ArrayTypeName.of(String::class.java),
-                Objects::class.java
+                Objects::class.java,
             )
             .addStatement("builder.append(lines[0])")
             .beginControlFlow("for (int i = 1; i < lines.length; i++)")
@@ -735,7 +759,8 @@ class JavaCodeGenerator(
                 when (val classInfo = pClass.info) {
                     PClassInfo.Any -> OBJECT
                     PClassInfo.Typed,
-                    PClassInfo.Dynamic -> OBJECT.nullableIf(nullable, typeArgument)
+                    PClassInfo.Dynamic,
+                    -> OBJECT.nullableIf(nullable, typeArgument)
 
                     PClassInfo.Boolean -> TypeName.BOOLEAN.boxIf(boxed).nullableIf(nullable, typeArgument)
                     PClassInfo.String -> STRING.nullableIf(nullable, typeArgument)
@@ -757,7 +782,7 @@ class JavaCodeGenerator(
                                 OBJECT
                             } else {
                                 typeArguments[1].toJavaPoetTypeArgumentName()
-                            }
+                            },
                         )
                             .nullableIf(nullable, typeArgument)
 
@@ -768,19 +793,20 @@ class JavaCodeGenerator(
                                 OBJECT
                             } else {
                                 typeArguments[0].toJavaPoetTypeArgumentName()
-                            }
+                            },
                         )
                             .nullableIf(nullable, typeArgument)
 
                     PClassInfo.List,
-                    PClassInfo.Listing -> {
+                    PClassInfo.Listing,
+                    -> {
                         ParameterizedTypeName.get(
                             LIST,
                             if (typeArguments.isEmpty()) {
                                 OBJECT
                             } else {
                                 typeArguments[0].toJavaPoetTypeArgumentName()
-                            }
+                            },
                         )
                             .nullableIf(nullable, typeArgument)
                     }
@@ -792,12 +818,13 @@ class JavaCodeGenerator(
                                 OBJECT
                             } else {
                                 typeArguments[0].toJavaPoetTypeArgumentName()
-                            }
+                            },
                         )
                             .nullableIf(nullable, typeArgument)
 
                     PClassInfo.Map,
-                    PClassInfo.Mapping ->
+                    PClassInfo.Mapping,
+                    ->
                         ParameterizedTypeName.get(
                             MAP,
                             if (typeArguments.isEmpty()) {
@@ -809,7 +836,7 @@ class JavaCodeGenerator(
                                 OBJECT
                             } else {
                                 typeArguments[1].toJavaPoetTypeArgumentName()
-                            }
+                            },
                         )
                             .nullableIf(nullable, typeArgument)
 
@@ -823,7 +850,7 @@ class JavaCodeGenerator(
                             else ->
                                 throw JavaCodeGeneratorException(
                                     "Standard library class `${pClass.qualifiedName}` is not supported by Java code generator. " +
-                                            "If you think this is an omission, please let us know."
+                                        "If you think this is an omission, please let us know.",
                                 )
                         }
                 }
@@ -836,13 +863,16 @@ class JavaCodeGenerator(
                     "pkl.base#NonNull" -> OBJECT.nullableIf(nullable, typeArgument)
                     "pkl.base#Int8" -> TypeName.BYTE.boxIf(boxed).nullableIf(nullable, typeArgument)
                     "pkl.base#Int16",
-                    "pkl.base#UInt8" -> TypeName.SHORT.boxIf(boxed).nullableIf(nullable, typeArgument)
+                    "pkl.base#UInt8",
+                    -> TypeName.SHORT.boxIf(boxed).nullableIf(nullable, typeArgument)
 
                     "pkl.base#Int32",
-                    "pkl.base#UInt16" -> TypeName.INT.boxIf(boxed).nullableIf(nullable, typeArgument)
+                    "pkl.base#UInt16",
+                    -> TypeName.INT.boxIf(boxed).nullableIf(nullable, typeArgument)
 
                     "pkl.base#UInt",
-                    "pkl.base#UInt32" -> TypeName.LONG.boxIf(boxed).nullableIf(nullable, typeArgument)
+                    "pkl.base#UInt32",
+                    -> TypeName.LONG.boxIf(boxed).nullableIf(nullable, typeArgument)
 
                     "pkl.base#DurationUnit" -> durationUnitClass.nullableIf(nullable, typeArgument)
                     "pkl.base#DataSizeUnit" -> dataSizeUnitClass.nullableIf(nullable, typeArgument)
@@ -852,7 +882,7 @@ class JavaCodeGenerator(
                             if (typeAlias.isStandardLibraryMember) {
                                 throw JavaCodeGeneratorException(
                                     "Standard library typealias `${typeAlias.qualifiedName}` is not supported by Java code generator. " +
-                                            "If you think this is an omission, please let us know."
+                                        "If you think this is an omission, please let us know.",
                                 )
                             } else {
                                 // reference generated enum class
@@ -867,15 +897,17 @@ class JavaCodeGenerator(
 
             is PType.Function ->
                 throw JavaCodeGeneratorException(
-                    "Pkl function types are not supported by the Java code generator."
+                    "Pkl function types are not supported by the Java code generator.",
                 )
 
             is PType.Union ->
-                if (CodeGeneratorUtils.isRepresentableAsString(this)) STRING.nullableIf(nullable, typeArgument)
-                else
+                if (CodeGeneratorUtils.isRepresentableAsString(this)) {
+                    STRING.nullableIf(nullable, typeArgument)
+                } else {
                     throw JavaCodeGeneratorException(
-                        "Pkl union types are not supported by the Java code generator."
+                        "Pkl union types are not supported by the Java code generator.",
                     )
+                }
 
             else ->
                 // should never encounter PType.TypeVariableNode because it can only occur in stdlib classes
@@ -883,9 +915,11 @@ class JavaCodeGenerator(
         }
 
     private fun TypeName.nullableIf(isNullable: Boolean, typeArgument: Boolean): TypeName =
-        if (typeArgument) box()
-        else if (isPrimitive && isNullable) box()
-        else if (isPrimitive || isNullable) this else annotated(nonNullAnnotation)
+        if (typeArgument) {
+            box()
+        } else if (isPrimitive && isNullable) {
+            box()
+        } else if (isPrimitive || isNullable) this else annotated(nonNullAnnotation)
 
     private fun TypeName.boxIf(shouldBox: Boolean): TypeName = if (shouldBox) box() else this
 
@@ -893,12 +927,14 @@ class JavaCodeGenerator(
         return map.mapKeys { (key, _) ->
             if (key in javaReservedWords) {
                 generateSequence("_$key") { "_$it" }.first { it !in map.keys }
-            } else key
+            } else {
+                key
+            }
         }
     }
 
-    private fun isAnnotation(pClass: PClass) : Boolean {
-        var clazz : PClass? = pClass
+    private fun isAnnotation(pClass: PClass): Boolean {
+        var clazz: PClass? = pClass
         while (clazz != null) {
             val (packageName, _) = nameMapper.map(clazz.moduleName)
             if (packageName == "pkl" && clazz.simpleName == "Annotation") {
@@ -908,7 +944,6 @@ class JavaCodeGenerator(
         }
         return false
     }
-
 }
 
 internal val javaReservedWords =
@@ -966,5 +1001,5 @@ internal val javaReservedWords =
         "try",
         "void",
         "volatile",
-        "while"
+        "while",
     )

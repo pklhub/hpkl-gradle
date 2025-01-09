@@ -14,30 +14,30 @@ import java.io.File
 abstract class CodeGenSpec(name: String, project: Project, objects: ObjectFactory) :
     ModulesSpec(name, project, objects) {
 
-    val outputDir : DirectoryProperty =
+    val outputDir: DirectoryProperty =
         objects.directoryProperty().convention(
             project.layout.buildDirectory.map { it: Directory ->
                 it.dir("generated").dir("pkl").dir(name)
-            }
+            },
         )
 
-    val sourceSet : Property<SourceSet> =
+    val sourceSet: Property<SourceSet> =
         objects.property(SourceSet::class.java).convention(
             project.providers.provider {
-                val sourceSets : SourceSetContainer? = project.extensions.findByType(
-                    SourceSetContainer::class.java
+                val sourceSets: SourceSetContainer? = project.extensions.findByType(
+                    SourceSetContainer::class.java,
                 )
                 sourceSets?.findByName(SourceSet.MAIN_SOURCE_SET_NAME)
-            }
+            },
         )
 
-    val indent : Property<String> =
+    val indent: Property<String> =
         objects.property(String::class.java).convention("  ")
 
-    val generateSpringBootConfig : Property<Boolean> =
+    val generateSpringBootConfig: Property<Boolean> =
         objects.property(Boolean::class.java).convention(false)
 
-    val implementSerializable : Property<Boolean> =
+    val implementSerializable: Property<Boolean> =
         objects.property(Boolean::class.java).convention(false)
 
     val renames: MapProperty<String, String> =
@@ -49,20 +49,20 @@ abstract class CodeGenSpec(name: String, project: Project, objects: ObjectFactor
         val resourceSourceDirectoriesExceptSpecOutput =
             sourceSet.flatMap { sourceSet: SourceSet ->
                 outputDir
-                .map { specOutputDir: Directory ->
-                    sourceSet
-                        .resources
-                        .sourceDirectories
-                        .filter { f: File ->
-                            !f.absolutePath
-                                .startsWith(
-                                    specOutputDir.asFile.absolutePath
-                                )
-                        }.files
-                }
-        }
+                    .map { specOutputDir: Directory ->
+                        sourceSet
+                            .resources
+                            .sourceDirectories
+                            .filter { f: File ->
+                                !f.absolutePath
+                                    .startsWith(
+                                        specOutputDir.asFile.absolutePath,
+                                    )
+                            }.files
+                    }
+            }
         localModulePath.from(resourceSourceDirectoriesExceptSpecOutput).from(
-            sourceSet.map<FileCollection> { obj: SourceSet -> obj.compileClasspath }
+            sourceSet.map<FileCollection> { obj: SourceSet -> obj.compileClasspath },
         )
 
         modulePath.from(localModulePath)

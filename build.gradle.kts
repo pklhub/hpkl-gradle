@@ -3,6 +3,7 @@ import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 plugins {
     kotlin("jvm") version "1.9.22"
     id("com.gradle.plugin-publish") version "1.2.1"
+    id("com.diffplug.spotless") version "6.13.0"
     `kotlin-dsl`
     `java-library`
 }
@@ -72,4 +73,10 @@ publishing {
 
 kotlin {
     jvmToolchain(17)
+}
+
+spotless {
+    kotlin {
+        ktlint()
+    }
 }

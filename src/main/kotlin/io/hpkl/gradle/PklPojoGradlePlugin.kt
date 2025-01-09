@@ -4,7 +4,6 @@ import io.hpkl.gradle.task.GeneratorTask
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 
-
 class PklPojoGradlePlugin : Plugin<Project> {
     private lateinit var project: Project
 
@@ -15,7 +14,7 @@ class PklPojoGradlePlugin : Plugin<Project> {
         val task = project.tasks.register(
             "generatePklPojo",
             GeneratorTask::class.java,
-            extension
+            extension,
         )
 
         project.tasks.findByName("compileJava")?.dependsOn(task.name)

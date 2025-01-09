@@ -11,47 +11,47 @@ import java.time.temporal.ChronoUnit
 import javax.inject.Inject
 
 abstract class JavaCodeGenSpec
-    @Inject constructor(name: String, project: Project, objects: ObjectFactory)
-    : CodeGenSpec(name, project, objects) {
-    val generateGetters : Property<Boolean> =
+@Inject constructor(name: String, project: Project, objects: ObjectFactory) :
+    CodeGenSpec(name, project, objects) {
+    val generateGetters: Property<Boolean> =
         objects.property(Boolean::class.java).convention(false)
 
-    val generateSetters : Property<Boolean> =
+    val generateSetters: Property<Boolean> =
         objects.property(Boolean::class.java).convention(false)
 
     val generateEmptyConstructor: Property<Boolean> =
         objects.property(Boolean::class.java).convention(false)
 
-    val generateJavadoc : Property<Boolean> =
+    val generateJavadoc: Property<Boolean> =
         objects.property(Boolean::class.java).convention(false)
 
-    val namedAnnotation : Property<String> =
+    val namedAnnotation: Property<String> =
         objects.property(String::class.java)
 
-    val nonNullAnnotation : Property<String> =
+    val nonNullAnnotation: Property<String> =
         objects.property(String::class.java)
 
-    val durationClass : Property<String> =
+    val durationClass: Property<String> =
         objects.property(String::class.java)
             .convention(Duration::class.java.canonicalName)
 
-    val dataSizeClass : Property<String> =
+    val dataSizeClass: Property<String> =
         objects.property(String::class.java)
             .convention(DataSize::class.java.canonicalName)
 
-    val durationUnitClass : Property<String> =
+    val durationUnitClass: Property<String> =
         objects.property(String::class.java)
             .convention(ChronoUnit::class.java.canonicalName)
 
-    val dataSizeUnitClass : Property<String> =
+    val dataSizeUnitClass: Property<String> =
         objects.property(String::class.java)
             .convention(DataSizeUnit::class.java.canonicalName)
 
-    val pairClass : Property<String> =
+    val pairClass: Property<String> =
         objects.property(String::class.java)
             .convention(Pair::class.java.canonicalName)
 
-    val generateAnnotationClasses : Property<Boolean> =
+    val generateAnnotationClasses: Property<Boolean> =
         objects.property(Boolean::class.java).convention(false)
 
     val springConfigAnnotation: Property<String> =

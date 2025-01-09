@@ -1,9 +1,9 @@
 package io.hpkl.gradle
 
-import kotlin.io.path.listDirectoryEntries
-import kotlin.io.path.readText
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import kotlin.io.path.listDirectoryEntries
+import kotlin.io.path.readText
 
 class KotlinCodeGeneratorsTest : AbstractTest() {
     @Test
@@ -29,7 +29,7 @@ class KotlinCodeGeneratorsTest : AbstractTest() {
             """
                 |data class Mod(
                 |  var other: Any? = 42
-                |) {"""
+                |) {""",
         )
 
         checkTextContains(
@@ -38,7 +38,7 @@ class KotlinCodeGeneratorsTest : AbstractTest() {
       |  data class Person(
       |    var name: String = "defaultName",
       |    var addresses: List<Address?> = listOf()
-    """
+    """,
         )
 
         checkTextContains(
@@ -72,7 +72,7 @@ class KotlinCodeGeneratorsTest : AbstractTest() {
       |    var optional: OptionalClass = OptionalClass(1, null),
       |    var diet: Diet = foo.bar.Mod.Diet.BERRIES,
       |    var email: EmailAddress = "test@test.com"
-    """
+    """,
         )
     }
 
@@ -139,7 +139,7 @@ class KotlinCodeGeneratorsTest : AbstractTest() {
       }
             
       compileKotlin.dependsOn(generatePklPojo)
-    """
+    """,
         )
     }
 
@@ -199,7 +199,7 @@ class KotlinCodeGeneratorsTest : AbstractTest() {
         
   
         other = 42
-      """
+      """,
         )
     }
 }

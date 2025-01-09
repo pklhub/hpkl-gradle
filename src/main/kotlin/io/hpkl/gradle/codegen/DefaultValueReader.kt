@@ -8,19 +8,23 @@ import org.pkl.core.PClass
 
 class DefaultValueReader {
 
-    fun findDefaultValues(options: CliBaseOptions,
-                          moduleSource: ModuleSource,
-                          pClass: PClass,
-                          isModuleClass: Boolean): Map<String, Any>? {
+    fun findDefaultValues(
+        options: CliBaseOptions,
+        moduleSource: ModuleSource,
+        pClass: PClass,
+        isModuleClass: Boolean,
+    ): Map<String, Any>? {
         val runner = Runner(options, moduleSource, pClass, isModuleClass)
         runner.run()
         return runner.properties
     }
 
-    class Runner(options: CliBaseOptions,
-                 val moduleSource: ModuleSource,
-                 private val pClass: PClass,
-                 private val isModuleClass: Boolean) : CliCommand(options) {
+    class Runner(
+        options: CliBaseOptions,
+        val moduleSource: ModuleSource,
+        private val pClass: PClass,
+        private val isModuleClass: Boolean,
+    ) : CliCommand(options) {
 
         var properties: Map<String, Any>? = null
 
@@ -36,15 +40,16 @@ class DefaultValueReader {
                                     """
                                 import("pkl:reflect").Class(module.getClass())
                                     .properties.map((k,v) -> Pair(k, v.defaultValue))
-                                """.trimIndent()
+                                    """.trimIndent(),
                                 )
                             } else {
                                 String.format(
                                     """
                                 import("pkl:reflect").Class(%s).properties.map((k,v) -> Pair(k, v.defaultValue))
-                                """.trimIndent(), pClass.simpleName
+                                    """.trimIndent(),
+                                    pClass.simpleName,
                                 )
-                            }
+                            },
                         ) as Map<String, Any>
                     } catch (t: Throwable) {
                         // TODO: Skip evaluate errors
@@ -55,7 +60,5 @@ class DefaultValueReader {
                 Closeables.closeQuietly(builder.resourceReaders)
             }
         }
-
     }
-
 }

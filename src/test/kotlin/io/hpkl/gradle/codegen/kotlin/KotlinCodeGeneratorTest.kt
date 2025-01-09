@@ -14,7 +14,11 @@ import org.pkl.core.DataSizeUnit
 import org.pkl.core.Evaluator
 import org.pkl.core.ModuleSource
 import org.pkl.core.util.IoUtils
-import java.io.*
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
+import java.io.ObjectInputStream
+import java.io.ObjectOutputStream
+import java.io.ObjectStreamClass
 import java.nio.file.Path
 import kotlin.reflect.KClass
 import kotlin.reflect.full.declaredMemberProperties
@@ -56,7 +60,7 @@ class KotlinCodeGeneratorTest {
                 "do",
                 "when",
                 "interface",
-                "typeof"
+                "typeof",
             )
 
         private val simpleClass: KClass<*> by lazy {
@@ -69,7 +73,7 @@ class KotlinCodeGeneratorTest {
           list: List<Int>
         }
       """
-                    .trimIndent()
+                    .trimIndent(),
             )
                 .compile()
                 .getValue("Simple")
@@ -116,7 +120,7 @@ class KotlinCodeGeneratorTest {
 
         typealias Direction = "north"|"east"|"south"|"west"
       """
-                    .trimIndent()
+                    .trimIndent(),
             )
         }
 
@@ -129,10 +133,9 @@ class KotlinCodeGeneratorTest {
             generateKdoc: Boolean = false,
             generateSpringBootConfig: Boolean = false,
             implementSerializable: Boolean = false,
-            mutableObjects:Boolean = false,
-            setDefaultValues: Boolean = false
+            mutableObjects: Boolean = false,
+            setDefaultValues: Boolean = false,
         ): KotlinSourceCode {
-
             val moduleSource = ModuleSource.text(pklCode)
             val module = Evaluator.preconfigured().evaluateSchema(moduleSource)
 
@@ -146,8 +149,8 @@ class KotlinCodeGeneratorTest {
                         implementSerializable = implementSerializable,
                         mutableObjects = mutableObjects,
                         setDefaultValues = setDefaultValues,
-                        baseCliBaseOptions = CliBaseOptions()
-                    )
+                        baseCliBaseOptions = CliBaseOptions(),
+                    ),
                 )
             return KotlinSourceCode(generator.kotlinFile)
         }
@@ -192,14 +195,14 @@ class KotlinCodeGeneratorTest {
         assertThat(propertyTypes.toString())
             .isEqualTo(
                 """PropertyTypes(boolean=true, int=42, float=42.3, string=string, duration=5m, """ +
-                        """durationUnit=MINUTES, dataSize=3.gb, dataSizeUnit=gb, nullable=idea, nullable2=null, """ +
-                        """pair=(1, 2), pair2=(pigeon, Other(name=pigeon)), coll=[1, 2], """ +
-                        """coll2=[Other(name=pigeon), Other(name=pigeon)], list=[1, 2], """ +
-                        """list2=[Other(name=pigeon), Other(name=pigeon)], set=[1, 2], """ +
-                        """set2=[Other(name=pigeon)], map={1=one, 2=two}, map2={one=Other(name=pigeon), """ +
-                        """two=Other(name=pigeon)}, container={1=one, 2=two}, container2={one=Other(name=pigeon), """ +
-                        """two=Other(name=pigeon)}, other=Other(name=pigeon), regex=(i?)\w*, any=Other(name=pigeon), """ +
-                        """nonNull=Other(name=pigeon), enum=north)"""
+                    """durationUnit=MINUTES, dataSize=3.gb, dataSizeUnit=gb, nullable=idea, nullable2=null, """ +
+                    """pair=(1, 2), pair2=(pigeon, Other(name=pigeon)), coll=[1, 2], """ +
+                    """coll2=[Other(name=pigeon), Other(name=pigeon)], list=[1, 2], """ +
+                    """list2=[Other(name=pigeon), Other(name=pigeon)], set=[1, 2], """ +
+                    """set2=[Other(name=pigeon)], map={1=one, 2=two}, map2={one=Other(name=pigeon), """ +
+                    """two=Other(name=pigeon)}, container={1=one, 2=two}, container2={one=Other(name=pigeon), """ +
+                    """two=Other(name=pigeon)}, other=Other(name=pigeon), regex=(i?)\w*, any=Other(name=pigeon), """ +
+                    """nonNull=Other(name=pigeon), enum=north)""",
             )
     }
 
@@ -213,7 +216,7 @@ class KotlinCodeGeneratorTest {
       }
     """
                     .trimIndent(),
-                mutableObjects = true
+                mutableObjects = true,
             )
 
         assertThat(kotlinCode)
@@ -224,19 +227,19 @@ class KotlinCodeGeneratorTest {
         |    open var `first name`: String?
         |  )
       """
-                    .trimMargin()
+                    .trimMargin(),
             )
             .contains(
                 """
           |  override fun toString(): String = ""${'"'}A Person(first name=${'$'}`first name`)""${'"'}
         """
-                    .trimMargin()
+                    .trimMargin(),
             )
             .doesNotContain(
                 """
           |  open fun copy(`first name`: String? = this.`first name`): `A Person` = `A Person`(`first name`)
         """
-                    .trimMargin()
+                    .trimMargin(),
             )
     }
 
@@ -249,7 +252,7 @@ class KotlinCodeGeneratorTest {
         `first name`: String
       }
     """
-                    .trimIndent()
+                    .trimIndent(),
             )
 
         assertThat(kotlinCode)
@@ -260,19 +263,19 @@ class KotlinCodeGeneratorTest {
         |    open val `first name`: String
         |  )
       """
-                    .trimMargin()
+                    .trimMargin(),
             )
             .contains(
                 """
           |  override fun toString(): String = ""${'"'}A Person(first name=${'$'}`first name`)""${'"'}
         """
-                    .trimMargin()
+                    .trimMargin(),
             )
             .contains(
                 """
           |  open fun copy(`first name`: String = this.`first name`): `A Person` = `A Person`(`first name`)
         """
-                    .trimMargin()
+                    .trimMargin(),
             )
     }
 
@@ -286,7 +289,7 @@ class KotlinCodeGeneratorTest {
         deprecatedProperty: Int = 1337
       }
     """
-                    .trimIndent()
+                    .trimIndent(),
             )
 
         assertThat(kotlinCode)
@@ -296,7 +299,7 @@ class KotlinCodeGeneratorTest {
       |    @Deprecated(message = "property deprecation message")
       |    val deprecatedProperty: Long
     """
-                    .trimMargin()
+                    .trimMargin(),
             )
     }
 
@@ -310,7 +313,7 @@ class KotlinCodeGeneratorTest {
         propertyOfDeprecatedClass: Int = 42
       }
     """
-                    .trimIndent()
+                    .trimIndent(),
             )
 
         assertThat(kotlinCode)
@@ -319,7 +322,7 @@ class KotlinCodeGeneratorTest {
       |  @Deprecated(message = "class deprecation message")
       |  data class DeprecatedClass(
     """
-                    .trimMargin()
+                    .trimMargin(),
             )
     }
 
@@ -333,7 +336,7 @@ class KotlinCodeGeneratorTest {
       
       propertyInDeprecatedModuleClass : Int = 42
     """
-                    .trimIndent()
+                    .trimIndent(),
             )
 
         assertThat(kotlinCode)
@@ -342,7 +345,7 @@ class KotlinCodeGeneratorTest {
       |@Deprecated(message = "module class deprecation message")
       |data class DeprecatedModule(
     """
-                    .trimMargin()
+                    .trimMargin(),
             )
     }
 
@@ -356,7 +359,7 @@ class KotlinCodeGeneratorTest {
          deprecatedProperty: Int = 1337
       }
     """
-                    .trimIndent()
+                    .trimIndent(),
             )
 
         assertThat(kotlinCode)
@@ -366,7 +369,7 @@ class KotlinCodeGeneratorTest {
       |    @Deprecated
       |    val deprecatedProperty: Long
     """
-                    .trimMargin()
+                    .trimMargin(),
             )
     }
 
@@ -380,7 +383,7 @@ class KotlinCodeGeneratorTest {
         propertyOfDeprecatedClass: Int = 42
       }
     """
-                    .trimIndent()
+                    .trimIndent(),
             )
 
         assertThat(kotlinCode)
@@ -389,7 +392,7 @@ class KotlinCodeGeneratorTest {
       |  @Deprecated
       |  data class DeprecatedClass(
     """
-                    .trimMargin()
+                    .trimMargin(),
             )
     }
 
@@ -403,7 +406,7 @@ class KotlinCodeGeneratorTest {
       
       propertyInDeprecatedModuleClass : Int = 42
     """
-                    .trimIndent()
+                    .trimIndent(),
             )
 
         assertThat(kotlinCode)
@@ -412,7 +415,7 @@ class KotlinCodeGeneratorTest {
       |@Deprecated
       |data class DeprecatedModule(
     """
-                    .trimMargin()
+                    .trimMargin(),
             )
     }
 
@@ -468,7 +471,7 @@ class KotlinCodeGeneratorTest {
                 "digit-1" to "DIGIT_1",
                 "42" to "_42",
                 "àœü" to "ÀŒÜ",
-                "日本-つくば" to "日本_つくば"
+                "日本-つくば" to "日本_つくば",
             )
         val kotlinCode =
             generateKotlinCode(
@@ -476,7 +479,7 @@ class KotlinCodeGeneratorTest {
       module my.mod
       typealias MyTypeAlias = ${cases.joinToString(" | ") { "\"${it.first}\"" }}
     """
-                    .trimIndent()
+                    .trimIndent(),
             )
         val kotlinClass = kotlinCode.compile().getValue("MyTypeAlias").java
 
@@ -490,7 +493,7 @@ class KotlinCodeGeneratorTest {
                     assertThat(field.name).isEqualTo(kotlinName)
                     Unit
                 }
-            }
+            },
         )
 
         assertAll(
@@ -500,7 +503,7 @@ class KotlinCodeGeneratorTest {
                     assertThat(enumConstant.toString()).isEqualTo(pklName)
                     Unit
                 }
-            }
+            },
         )
     }
 
@@ -513,7 +516,7 @@ class KotlinCodeGeneratorTest {
         module my.mod
         typealias MyTypeAlias = "foo-bar" | "foo bar"
       """
-                        .trimIndent()
+                        .trimIndent(),
                 )
             }
         assertThat(exception)
@@ -529,7 +532,7 @@ class KotlinCodeGeneratorTest {
         module my.mod
         typealias MyTypeAlias = "foo" | "" | "bar"
       """
-                        .trimIndent()
+                        .trimIndent(),
                 )
             }
         assertThat(exception).hasMessageContaining("cannot be converted")
@@ -544,7 +547,7 @@ class KotlinCodeGeneratorTest {
         module my.mod
         typealias MyTypeAlias = "foo" | "✅" | "bar"
       """
-                        .trimIndent()
+                        .trimIndent(),
                 )
             }
         assertThat(exception).hasMessageContainingAll("✅", "cannot be converted")
@@ -565,7 +568,7 @@ class KotlinCodeGeneratorTest {
         sibling: Person?
       }
     """
-                    .trimIndent()
+                    .trimIndent(),
             )
 
         assertThat(kotlinCode)
@@ -590,7 +593,7 @@ class KotlinCodeGeneratorTest {
         }
         
       """
-                    .trimIndent()
+                    .trimIndent(),
             )
     }
 
@@ -606,7 +609,7 @@ class KotlinCodeGeneratorTest {
         name: Regex
       }
     """
-                    .trimIndent()
+                    .trimIndent(),
             )
 
         assertThat(kotlinCode)
@@ -630,7 +633,7 @@ class KotlinCodeGeneratorTest {
         other: String
       }
     """
-                    .trimIndent()
+                    .trimIndent(),
             )
 
         assertThat(kotlinCode)
@@ -642,7 +645,7 @@ class KotlinCodeGeneratorTest {
         |    open val bar: Bar
         |  )
       """
-                    .trimMargin()
+                    .trimMargin(),
             )
             .contains(
                 """
@@ -651,7 +654,7 @@ class KotlinCodeGeneratorTest {
         |    open val other: String
         |  )
       """
-                    .trimMargin()
+                    .trimMargin(),
             )
     }
 
@@ -673,7 +676,7 @@ class KotlinCodeGeneratorTest {
         three: Duration
       }
     """
-                    .trimIndent()
+                    .trimIndent(),
             )
 
         assertThat(kotlinCode)
@@ -684,7 +687,7 @@ class KotlinCodeGeneratorTest {
         |    open val one: Long
         |  )
       """
-                    .trimMargin()
+                    .trimMargin(),
             )
             .contains(
                 """
@@ -692,7 +695,7 @@ class KotlinCodeGeneratorTest {
         |    one: Long
         |  ) : Foo(one)
       """
-                    .trimMargin()
+                    .trimMargin(),
             )
             .contains(
                 """
@@ -701,7 +704,7 @@ class KotlinCodeGeneratorTest {
         |    open val two: String
         |  ) : None(one)
       """
-                    .trimMargin()
+                    .trimMargin(),
             )
             .isEqualToResourceFile("Inheritance.kotlin")
     }
@@ -717,7 +720,7 @@ class KotlinCodeGeneratorTest {
       abstract class Bar
       class Baz extends Bar
     """
-                    .trimIndent()
+                    .trimIndent(),
             )
 
         assertThat(kotlinCode)
@@ -730,7 +733,7 @@ class KotlinCodeGeneratorTest {
       |  class Baz : Bar() {
       |    fun copy(): Baz = Baz()
     """
-                    .trimMargin()
+                    .trimMargin(),
             )
     }
 
@@ -747,7 +750,7 @@ class KotlinCodeGeneratorTest {
       class Baz extends Bar { three: Duration }
       class Qux extends Bar {}
     """
-                    .trimIndent()
+                    .trimIndent(),
             )
 
         assertThat(kotlinCode)
@@ -759,7 +762,7 @@ class KotlinCodeGeneratorTest {
         |    open val one: Long
         |  )
       """
-                    .trimMargin()
+                    .trimMargin(),
             )
             // missing trailing `{` proves that no methods are generated
             .contains(
@@ -769,7 +772,7 @@ class KotlinCodeGeneratorTest {
         |    open val two: String
         |  ) : Foo(one)
       """
-                    .trimMargin()
+                    .trimMargin(),
             )
             .contains(
                 """
@@ -784,7 +787,7 @@ class KotlinCodeGeneratorTest {
         |      three: Duration = this.three
         |    ): Baz = Baz(one, two, three)
       """
-                    .trimMargin()
+                    .trimMargin(),
             )
             .contains(
                 """
@@ -794,7 +797,7 @@ class KotlinCodeGeneratorTest {
         |  ) : Bar(one, two) {
         |    fun copy(one: Long = this.one, two: String = this.two): Qux = Qux(one, two)
       """
-                    .trimMargin()
+                    .trimMargin(),
             )
     }
 
@@ -811,7 +814,7 @@ class KotlinCodeGeneratorTest {
       class Baz extends Bar { three: Duration }
       class Qux extends Bar {}
     """
-                    .trimIndent()
+                    .trimIndent(),
             )
 
         assertThat(kotlinCode)
@@ -823,7 +826,7 @@ class KotlinCodeGeneratorTest {
         |  ) {
         |    open fun copy(one: Long = this.one): Foo = Foo(one)
       """
-                    .trimMargin()
+                    .trimMargin(),
             )
             // missing trailing `{` proves that no methods are generated
             .contains(
@@ -833,7 +836,7 @@ class KotlinCodeGeneratorTest {
         |    open val two: String
         |  ) : Foo(one)
       """
-                    .trimMargin()
+                    .trimMargin(),
             )
             .contains(
                 """
@@ -850,7 +853,7 @@ class KotlinCodeGeneratorTest {
         |
         |    override fun copy(one: Long): Baz = Baz(one, two, three)
       """
-                    .trimMargin()
+                    .trimMargin(),
             )
             .contains(
                 """
@@ -862,7 +865,7 @@ class KotlinCodeGeneratorTest {
         |
         |    override fun copy(one: Long): Qux = Qux(one, two)
       """
-                    .trimMargin()
+                    .trimMargin(),
             )
     }
 
@@ -879,7 +882,7 @@ class KotlinCodeGeneratorTest {
       class Baz extends Bar { two: Duration }
       class Qux extends Bar {}
     """
-                    .trimIndent()
+                    .trimIndent(),
             )
 
         assertThat(kotlinCode)
@@ -891,7 +894,7 @@ class KotlinCodeGeneratorTest {
         |  ) {
         |    open fun copy(one: Long = this.one): Foo = Foo(one)
       """
-                    .trimMargin()
+                    .trimMargin(),
             )
             // missing trailing `{` proves that no methods are generated
             .contains(
@@ -900,7 +903,7 @@ class KotlinCodeGeneratorTest {
         |    one: Long
         |  ) : Foo(one)
       """
-                    .trimMargin()
+                    .trimMargin(),
             )
             .contains(
                 """
@@ -912,7 +915,7 @@ class KotlinCodeGeneratorTest {
         |
         |    override fun copy(one: Long): Baz = Baz(one, two)
       """
-                    .trimMargin()
+                    .trimMargin(),
             )
             .contains(
                 """
@@ -921,7 +924,7 @@ class KotlinCodeGeneratorTest {
         |  ) : Bar(one) {
         |    override fun copy(one: Long): Qux = Qux(one)
       """
-                    .trimMargin()
+                    .trimMargin(),
             )
     }
 
@@ -938,7 +941,7 @@ class KotlinCodeGeneratorTest {
         $props
       }
     """
-                    .trimIndent()
+                    .trimIndent(),
             )
                 .compile()
                 .getValue("Foo")
@@ -960,7 +963,7 @@ class KotlinCodeGeneratorTest {
         name: String
       }
     """
-                    .trimIndent()
+                    .trimIndent(),
             )
 
         assertThat(kotlinCode)
@@ -981,7 +984,7 @@ class KotlinCodeGeneratorTest {
         }
         
       """
-                    .trimIndent()
+                    .trimIndent(),
             )
     }
 
@@ -999,7 +1002,7 @@ class KotlinCodeGeneratorTest {
         name: String
       }
     """
-                    .trimIndent()
+                    .trimIndent(),
             )
 
         assertThat(kotlinCode)
@@ -1018,7 +1021,7 @@ class KotlinCodeGeneratorTest {
         }
         
       """
-                    .trimIndent()
+                    .trimIndent(),
             )
     }
 
@@ -1037,7 +1040,7 @@ class KotlinCodeGeneratorTest {
         parrot2: String
       }
     """
-                    .trimIndent()
+                    .trimIndent(),
             )
 
         assertThat(kotlinCode)
@@ -1081,7 +1084,7 @@ class KotlinCodeGeneratorTest {
       typealias Email = String(contains("@"))
     """
                     .trimIndent(),
-                generateKdoc = true
+                generateKdoc = true,
             )
 
         assertThat(kotlinCode).compilesSuccessfully().isEqualToResourceFile("Kdoc.kotlin")
@@ -1099,7 +1102,7 @@ class KotlinCodeGeneratorTest {
       class Product
     """
                     .trimIndent(),
-                generateKdoc = true
+                generateKdoc = true,
             )
 
         assertThat(kotlinCode)
@@ -1116,7 +1119,7 @@ class KotlinCodeGeneratorTest {
       }
       
     """
-                    .trimIndent()
+                    .trimIndent(),
             )
     }
 
@@ -1156,7 +1159,7 @@ class KotlinCodeGeneratorTest {
         list: List<UInt>
       }
     """
-                    .trimIndent()
+                    .trimIndent(),
             )
 
         assertThat(kotlinCode)
@@ -1204,7 +1207,7 @@ class KotlinCodeGeneratorTest {
         }
         
       """
-                    .trimIndent()
+                    .trimIndent(),
             )
     }
 
@@ -1235,7 +1238,7 @@ class KotlinCodeGeneratorTest {
         recursive2: Recursive2
       }
     """
-                    .trimIndent()
+                    .trimIndent(),
             )
 
         assertThat(kotlinCode)
@@ -1273,7 +1276,7 @@ class KotlinCodeGeneratorTest {
         }
         
       """
-                    .trimIndent()
+                    .trimIndent(),
             )
     }
 
@@ -1315,7 +1318,7 @@ class KotlinCodeGeneratorTest {
         res9: MMap
       }
     """
-                    .trimIndent()
+                    .trimIndent(),
             )
 
         assertThat(kotlinCode)
@@ -1333,7 +1336,7 @@ class KotlinCodeGeneratorTest {
         |  val res8: StringMap<Any?>,
         |  val res9: MMap<Any?>
       """
-                    .trimMargin()
+                    .trimMargin(),
             )
             .contains(
                 """
@@ -1348,7 +1351,7 @@ class KotlinCodeGeneratorTest {
         |    val res8: StringMap<Any?>,
         |    val res9: MMap<Any?>
       """
-                    .trimMargin()
+                    .trimMargin(),
             )
     }
 
@@ -1361,7 +1364,7 @@ class KotlinCodeGeneratorTest {
 
       x: "Pigeon"|"Barn Owl"|"Parrot"
     """
-                    .trimIndent()
+                    .trimIndent(),
             )
 
         assertThat(kotlinCode)
@@ -1372,7 +1375,7 @@ class KotlinCodeGeneratorTest {
         |  val x: String
         |)
       """
-                    .trimMargin()
+                    .trimMargin(),
             )
     }
 
@@ -1386,7 +1389,7 @@ class KotlinCodeGeneratorTest {
   
           x: "Pigeon"|Int|"Parrot"
         """
-                        .trimIndent()
+                        .trimIndent(),
                 )
             }
         assertThat(e).hasMessageContaining("Pkl union types are not supported")
@@ -1408,7 +1411,7 @@ class KotlinCodeGeneratorTest {
       
       typealias Version = "RELEASE"|String|"LATEST"
     """
-                    .trimIndent()
+                    .trimIndent(),
             )
 
         assertThat(kotlinCode)
@@ -1434,7 +1437,7 @@ class KotlinCodeGeneratorTest {
       typealias Version5 = (Version4|String)|("LATEST"|String)
       typealias Version6 = Version5 // not inlined
     """
-                    .trimIndent()
+                    .trimIndent(),
             )
 
         assertThat(kotlinCode)
@@ -1461,7 +1464,7 @@ class KotlinCodeGeneratorTest {
       }
     """
                     .trimIndent(),
-                generateSpringBootConfig = true
+                generateSpringBootConfig = true,
             )
 
         assertThat(kotlinCode)
@@ -1471,7 +1474,7 @@ class KotlinCodeGeneratorTest {
         |data class Mod(
         |  val server: Server
       """
-                    .trimMargin()
+                    .trimMargin(),
             )
             .contains(
                 """
@@ -1480,7 +1483,7 @@ class KotlinCodeGeneratorTest {
         |    val port: Long,
         |    val urls: List<URI>
       """
-                    .trimMargin()
+                    .trimMargin(),
             )
             .doesNotContain("@ConstructorBinding")
 
@@ -1503,7 +1506,7 @@ class KotlinCodeGeneratorTest {
           
           pigeon: Person
         """
-                    .trimIndent()
+                    .trimIndent(),
             )
 
         val client =
@@ -1518,7 +1521,7 @@ class KotlinCodeGeneratorTest {
           
           parrot: library.Person
         """
-                    .trimIndent()
+                    .trimIndent(),
             )
 
         val kotlinSourceFiles = generateFiles(library, client)
@@ -1537,7 +1540,7 @@ class KotlinCodeGeneratorTest {
         |  val parrot: Library.Person
         |)
       """
-                    .trimMargin()
+                    .trimMargin(),
             )
     }
 
@@ -1553,7 +1556,7 @@ class KotlinCodeGeneratorTest {
     
           pigeon: Person
         """
-                    .trimIndent()
+                    .trimIndent(),
             )
 
         val derived =
@@ -1568,7 +1571,7 @@ class KotlinCodeGeneratorTest {
           person1: Person
           person2: Person2
         """
-                    .trimIndent()
+                    .trimIndent(),
             )
 
         val kotlinSourceFiles = generateFiles(base, derived)
@@ -1588,7 +1591,7 @@ class KotlinCodeGeneratorTest {
         |  val person2: Person2
         |) : Base(pigeon)
       """
-                    .trimMargin()
+                    .trimMargin(),
             )
             .contains(
                 """
@@ -1597,7 +1600,7 @@ class KotlinCodeGeneratorTest {
         |    val age: Long
         |  ) : Base.Person(name)
       """
-                    .trimMargin()
+                    .trimMargin(),
             )
     }
 
@@ -1617,7 +1620,7 @@ class KotlinCodeGeneratorTest {
     
           typealias Version = "LATEST"|String
         """
-                    .trimIndent()
+                    .trimIndent(),
             )
 
         val moduleTwo =
@@ -1630,7 +1633,7 @@ class KotlinCodeGeneratorTest {
           
           v: Version = "1.2.3"
         """
-                    .trimIndent()
+                    .trimIndent(),
             )
 
         val kotlinSourceFiles = generateFiles(moduleOne, moduleTwo)
@@ -1647,7 +1650,7 @@ class KotlinCodeGeneratorTest {
       |  val v: Version = "1.2.3"
       |) : Base()
     """
-                    .trimMargin()
+                    .trimMargin(),
             )
     }
 
@@ -1692,7 +1695,7 @@ class KotlinCodeGeneratorTest {
       abstract class NotSerializable
     """
                     .trimIndent(),
-                implementSerializable = true
+                implementSerializable = true,
             )
 
         assertThat(kotlinCode)
@@ -1731,7 +1734,7 @@ class KotlinCodeGeneratorTest {
                 smallStruct,
                 Regex("(i?)\\w*"),
                 smallStruct,
-                enumValue
+                enumValue,
             )
 
         fun confirmSerDe(instance: Any) {
@@ -1777,7 +1780,7 @@ class KotlinCodeGeneratorTest {
           street: String
         }
       """,
-                implementSerializable = true
+                implementSerializable = true,
             )
 
         assertThat(kotlinCode)
@@ -1799,7 +1802,7 @@ class KotlinCodeGeneratorTest {
       |  }
       |}
     """
-                    .trimMargin()
+                    .trimMargin(),
             )
     }
 
@@ -1814,8 +1817,8 @@ class KotlinCodeGeneratorTest {
             
             someProp: String
           """
-                        .trimIndent()
-                )
+                        .trimIndent(),
+                ),
             )
         assertThat(kotlinCode).containsKey("kotlin/Foo(2a)Bar.kt")
     }
@@ -1825,23 +1828,23 @@ class KotlinCodeGeneratorTest {
         val files =
             KotlinCodeGeneratorOptions(
                 renames = mapOf("a.b.c" to "x.y.z", "d.e.f.AnotherModule" to "u.v.w.RenamedModule"),
-                baseCliBaseOptions = CliBaseOptions()
+                baseCliBaseOptions = CliBaseOptions(),
             )
                 .generateFiles(
                     "MyModule.pkl" to
-                            """
+                        """
               module a.b.c.MyModule
               
               foo: String = "abc"
             """
-                                .trimIndent(),
+                            .trimIndent(),
                     "AnotherModule.pkl" to
-                            """
+                        """
               module d.e.f.AnotherModule
               
               bar: Int = 123
             """
-                                .trimIndent()
+                            .trimIndent(),
                 )
                 .toMutableMap()
 
@@ -1857,30 +1860,30 @@ class KotlinCodeGeneratorTest {
         val files =
             KotlinCodeGeneratorOptions(
                 renames = mapOf("com.foo.bar." to "x.", "com.foo." to "y.", "com." to "z.", "" to "w."),
-                baseCliBaseOptions = CliBaseOptions()
+                baseCliBaseOptions = CliBaseOptions(),
             )
                 .generateFiles(
                     "com/foo/bar/Module1" to
-                            """
+                        """
               module com.foo.bar.Module1
               
               bar: String
             """
-                                .trimIndent(),
+                            .trimIndent(),
                     "com/Module2" to
-                            """
+                        """
               module com.Module2
               
               com: String
             """
-                                .trimIndent(),
+                            .trimIndent(),
                     "org/baz/Module3" to
-                            """
+                        """
               module org.baz.Module3
               
               baz: String
             """
-                                .trimIndent()
+                            .trimIndent(),
                 )
                 .toMutableMap()
 
@@ -1901,22 +1904,22 @@ class KotlinCodeGeneratorTest {
                 mapOf(
                     "org.foo" to "com.foo.x",
                     "org.bar.Module2" to "org.bar.RenamedModule",
-                    "org.baz" to "com.baz.a.b"
+                    "org.baz" to "com.baz.a.b",
                 ),
-                baseCliBaseOptions = CliBaseOptions()
+                baseCliBaseOptions = CliBaseOptions(),
             )
                 .generateFiles(
                     "org/foo/Module1" to
-                            """
+                        """
               module org.foo.Module1
               
               class Person {
                 name: String
               }
             """
-                                .trimIndent(),
+                            .trimIndent(),
                     "org/bar/Module2" to
-                            """
+                        """
               module org.bar.Module2
               
               import "../../org/foo/Module1.pkl"
@@ -1926,9 +1929,9 @@ class KotlinCodeGeneratorTest {
                 name: String
               }
             """
-                                .trimIndent(),
+                            .trimIndent(),
                     "org/baz/Module3" to
-                            """
+                        """
               module org.baz.Module3
               
               import "../../org/bar/Module2.pkl"
@@ -1937,28 +1940,28 @@ class KotlinCodeGeneratorTest {
                 owner: Module2.Group
               }
             """
-                                .trimIndent()
+                            .trimIndent(),
                 )
 
         files.validateContents(
             "kotlin/com/foo/x/Module1.kt" to
-                    listOf("package com.foo.x", "object Module1 {", "data class Person("),
+                listOf("package com.foo.x", "object Module1 {", "data class Person("),
             // ---
             "kotlin/org/bar/RenamedModule.kt" to
-                    listOf(
-                        "package org.bar",
-                        "import com.foo.x.Module1",
-                        "object RenamedModule {",
-                        "val owner: Module1.Person"
-                    ),
+                listOf(
+                    "package org.bar",
+                    "import com.foo.x.Module1",
+                    "object RenamedModule {",
+                    "val owner: Module1.Person",
+                ),
             // ---
             "kotlin/com/baz/a/b/Module3.kt" to
-                    listOf(
-                        "package com.baz.a.b",
-                        "import org.bar.RenamedModule",
-                        "object Module3 {",
-                        "val owner: RenamedModule.Group"
-                    )
+                listOf(
+                    "package com.baz.a.b",
+                    "import org.bar.RenamedModule",
+                    "object Module3 {",
+                    "val owner: RenamedModule.Group",
+                ),
         )
     }
 
@@ -1967,23 +1970,23 @@ class KotlinCodeGeneratorTest {
         val files =
             KotlinCodeGeneratorOptions(
                 renames = mapOf("a.b.c.MyModule" to "x.y.z.renamed_module", "d.e.f." to "u.v.w."),
-                baseCliBaseOptions = CliBaseOptions()
+                baseCliBaseOptions = CliBaseOptions(),
             )
                 .generateFiles(
                     "MyModule.pkl" to
-                            """
+                        """
               module a.b.c.MyModule
               
               foo: String = "abc"
             """
-                                .trimIndent(),
+                            .trimIndent(),
                     "lower_module.pkl" to
-                            """
+                        """
               module d.e.f.lower_module 
               
               bar: Int = 123
             """
-                                .trimIndent()
+                            .trimIndent(),
                 )
 
         files.validateContents(
@@ -2020,7 +2023,7 @@ class KotlinCodeGeneratorTest {
     """
                     .trimIndent(),
                 mutableObjects = true,
-                setDefaultValues = true
+                setDefaultValues = true,
             )
 
         assertThat(kotlinCode)
@@ -2040,12 +2043,12 @@ class KotlinCodeGeneratorTest {
                 |    var map: Map<String, Long> = mapOf("1" to 2L),
                 |    var inner: Inner = Inner("Inner", 1)
                 |  )"""
-                    .trimMargin()
+                    .trimMargin(),
             )
     }
 
     private fun Map<String, String>.validateContents(
-        vararg assertions: Pair<String, List<String>>
+        vararg assertions: Pair<String, List<String>>,
     ) {
         val files = toMutableMap()
 
@@ -2058,7 +2061,7 @@ class KotlinCodeGeneratorTest {
     }
 
     private fun KotlinCodeGeneratorOptions.generateFiles(
-        vararg pklModules: PklModule
+        vararg pklModules: PklModule,
     ): Map<String, String> {
         val pklFiles = pklModules.map { it.writeToDisk(tempDir.resolve("pkl/${it.name}.pkl")) }
         val evaluator = Evaluator.preconfigured()
@@ -2071,13 +2074,13 @@ class KotlinCodeGeneratorTest {
     }
 
     private fun KotlinCodeGeneratorOptions.generateFiles(
-        vararg pklModules: Pair<String, String>
+        vararg pklModules: Pair<String, String>,
     ): Map<String, String> =
         generateFiles(*pklModules.map { (name, text) -> PklModule(name, text) }.toTypedArray())
 
     private fun generateFiles(vararg pklModules: PklModule): Map<String, KotlinSourceCode> =
         KotlinCodeGeneratorOptions(
-            baseCliBaseOptions = CliBaseOptions()
+            baseCliBaseOptions = CliBaseOptions(),
         ).generateFiles(*pklModules).mapValues { KotlinSourceCode(it.value) }
 
     private fun instantiateOtherAndPropertyTypes(): kotlin.Pair<Any, Any> {
@@ -2116,7 +2119,7 @@ class KotlinCodeGeneratorTest {
                 Regex("(i?)\\w*"),
                 other,
                 other,
-                enumValue
+                enumValue,
             )
 
         return other to propertyTypes
@@ -2128,7 +2131,7 @@ class KotlinCodeGeneratorTest {
     private class KotlinSourceCodeAssert(actual: KotlinSourceCode) :
         AbstractAssert<KotlinSourceCodeAssert, KotlinSourceCode>(
             actual,
-            KotlinSourceCodeAssert::class.java
+            KotlinSourceCodeAssert::class.java,
         ) {
         fun contains(expected: String): KotlinSourceCodeAssert {
             if (!actual.text.contains(expected)) {
