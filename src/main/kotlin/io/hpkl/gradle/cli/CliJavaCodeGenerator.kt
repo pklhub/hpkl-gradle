@@ -2,13 +2,13 @@ package io.hpkl.gradle.cli
 
 import io.hpkl.gradle.codegen.java.JavaCodeGenerator
 import io.hpkl.gradle.codegen.java.JavaCodeGeneratorException
-import org.gradle.api.logging.Logger
 import org.pkl.commons.cli.CliCommand
 import org.pkl.commons.cli.CliException
 import org.pkl.commons.createParentDirectories
 import org.pkl.commons.writeString
 import org.pkl.core.Closeables
 import org.pkl.core.ModuleSource
+import org.slf4j.Logger
 import java.io.IOException
 
 class CliJavaCodeGenerator(
