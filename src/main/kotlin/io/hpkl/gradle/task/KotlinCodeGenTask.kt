@@ -34,6 +34,7 @@ class KotlinCodeGenTask(
                 spec.durationClassConverter.orNull,
                 spec.dataSizeConverter.orNull,
             ),
+            project.logger,
         )
             .run()
     }

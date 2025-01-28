@@ -5,8 +5,9 @@ import org.pkl.commons.cli.CliCommand
 import org.pkl.core.Closeables
 import org.pkl.core.ModuleSource
 import org.pkl.core.PClass
+import org.slf4j.Logger
 
-class DefaultValueReader {
+class DefaultValueReader(private val logger: Logger) {
 
     fun findDefaultValues(
         options: CliBaseOptions,
@@ -14,7 +15,7 @@ class DefaultValueReader {
         pClass: PClass,
         isModuleClass: Boolean,
     ): Map<String, Any>? {
-        val runner = Runner(options, moduleSource, pClass, isModuleClass)
+        val runner = Runner(options, moduleSource, pClass, isModuleClass, logger)
         runner.run()
         return runner.properties
     }
@@ -24,6 +25,7 @@ class DefaultValueReader {
         val moduleSource: ModuleSource,
         private val pClass: PClass,
         private val isModuleClass: Boolean,
+        private val logger: Logger,
     ) : CliCommand(options) {
 
         var properties: Map<String, Any>? = null
@@ -52,6 +54,7 @@ class DefaultValueReader {
                             },
                         ) as Map<String, Any>
                     } catch (t: Throwable) {
+                        logger.error(t.message, t)
                         // TODO: Skip evaluate errors
                     }
                 }

@@ -39,6 +39,7 @@ class JavaCodeGenTask(
                 spec.durationClassConverter.orNull,
                 spec.dataSizeConverter.orNull,
             ),
+            project.logger,
         )
             .run()
     }

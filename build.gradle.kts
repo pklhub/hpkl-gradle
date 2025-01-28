@@ -34,6 +34,8 @@ dependencies {
     testImplementation("org.jetbrains.kotlin:kotlin-compiler-embeddable:1.7.10")
     testRuntimeOnly("org.jetbrains.kotlin:kotlin-scripting-compiler-embeddable:1.7.10")
     testRuntimeOnly("org.jetbrains.kotlin:kotlin-script-util:1.7.10")
+    testAnnotationProcessor("org.projectlombok:lombok:1.18.36")
+    testImplementation("org.projectlombok:lombok:1.18.36")
 }
 
 gradlePlugin {

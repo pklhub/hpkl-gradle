@@ -14,6 +14,7 @@ import org.pkl.core.DataSizeUnit
 import org.pkl.core.Evaluator
 import org.pkl.core.ModuleSource
 import org.pkl.core.util.IoUtils
+import org.slf4j.LoggerFactory
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.ObjectInputStream
@@ -31,6 +32,8 @@ class KotlinCodeGeneratorTest {
         // according to:
         // https://github.com/JetBrains/kotlin/blob/master/core/descriptors/
         // src/org/jetbrains/kotlin/renderer/KeywordStringsGenerated.java
+        val logger = LoggerFactory.getLogger(KotlinCodeGeneratorTest::class.java)
+
         private val kotlinKeywords =
             setOf(
                 "package",
@@ -151,6 +154,7 @@ class KotlinCodeGeneratorTest {
                         setDefaultValues = setDefaultValues,
                         baseCliBaseOptions = CliBaseOptions(),
                     ),
+                    logger,
                 )
             return KotlinSourceCode(generator.kotlinFile)
         }
@@ -2068,7 +2072,7 @@ class KotlinCodeGeneratorTest {
         return pklFiles.fold(mapOf()) { acc, pklFile ->
             val moduleSource = ModuleSource.path(pklFile)
             val pklSchema = evaluator.evaluateSchema(moduleSource)
-            val generator = KotlinCodeGenerator(pklSchema, moduleSource, this)
+            val generator = KotlinCodeGenerator(pklSchema, moduleSource, this, logger)
             acc + generator.output
         }
     }

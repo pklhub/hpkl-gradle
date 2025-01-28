@@ -25,6 +25,7 @@ import org.pkl.core.PType
 import org.pkl.core.TypeAlias
 import org.pkl.core.Version
 import org.pkl.core.util.CodeGeneratorUtils
+import org.slf4j.Logger
 import java.util.Objects
 import java.util.regex.Pattern
 import javax.lang.model.element.Modifier
@@ -35,10 +36,11 @@ class JavaCodeGenerator(
     private val schema: ModuleSchema,
     private val moduleSource: ModuleSource,
     private val codegenOptions: JavaCodeGeneratorOptions,
+    private val logger: Logger,
 ) {
 
     private val nameMapper = NameMapper(codegenOptions.renames)
-    private val defaultValueReader = DefaultValueReader()
+    private val defaultValueReader = DefaultValueReader(logger)
 
     private val defaultValueGenerator: JavaValueGenerator = JavaValueGenerator(
         codegenOptions,
