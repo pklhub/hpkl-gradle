@@ -36,6 +36,7 @@ import org.pkl.core.TypeParameter
 import org.pkl.core.Version
 import org.pkl.core.util.CodeGeneratorUtils
 import org.pkl.core.util.IoUtils
+import org.slf4j.Logger
 import java.net.URI
 import java.util.Objects
 
@@ -49,6 +50,8 @@ class KotlinCodeGenerator(
 
     /** The options to use for the code generator */
     private val options: KotlinCodeGeneratorOptions,
+
+    private val logger: Logger,
 ) {
     companion object {
         private val STRING = String::class.asClassName()
@@ -79,7 +82,7 @@ class KotlinCodeGenerator(
             return mapOf(kotlinFileName to kotlinFile)
         }
 
-    private val defaultValueReader = DefaultValueReader()
+    private val defaultValueReader = DefaultValueReader(logger)
 
     private val kotlinFileName: String
         get() = buildString {

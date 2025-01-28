@@ -8,9 +8,13 @@ import org.pkl.commons.createParentDirectories
 import org.pkl.commons.writeString
 import org.pkl.core.Closeables
 import org.pkl.core.ModuleSource
+import org.slf4j.Logger
 import java.io.IOException
 
-class CliJavaCodeGenerator(private val options: CliJavaCodeGeneratorOptions) :
+class CliJavaCodeGenerator(
+    private val options: CliJavaCodeGeneratorOptions,
+    private val logger: Logger,
+) :
     CliCommand(options.base) {
 
     override fun doRun() {
@@ -20,7 +24,7 @@ class CliJavaCodeGenerator(private val options: CliJavaCodeGeneratorOptions) :
                 for (moduleUri in options.base.normalizedSourceModules) {
                     val moduleSource = ModuleSource.uri(moduleUri)
                     val schema = evaluator.evaluateSchema(moduleSource)
-                    val codeGenerator = JavaCodeGenerator(schema, moduleSource, options.toJavaCodeGeneratorOptions())
+                    val codeGenerator = JavaCodeGenerator(schema, moduleSource, options.toJavaCodeGeneratorOptions(), logger)
                     try {
                         for ((fileName, fileContents) in codeGenerator.output) {
                             val outputFile = options.outputDir.resolve(fileName)
