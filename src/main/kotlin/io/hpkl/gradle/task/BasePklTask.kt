@@ -63,7 +63,7 @@ abstract class BasePklTask(
     var cachedOptions: CliBaseOptions? = null
 
     // Must be called during task execution time only.
-    protected open val cliBaseOptions: CliBaseOptions?
+    protected open val cliBaseOptions: CliBaseOptions
         get() {
             if (cachedOptions == null) {
                 cachedOptions =
@@ -95,7 +95,7 @@ abstract class BasePklTask(
                         externalResourceReaders = emptyMap(),
                     )
             }
-            return cachedOptions
+            return cachedOptions!!
         }
 
     protected open fun getSourceModulesAsUris(): List<URI> {

@@ -9,6 +9,7 @@ class JavaCodeGeneratorsTest : AbstractTest() {
     @Test
     fun `generate code`() {
         writeBuildFile()
+        writeProjectFile()
         writePklFile()
 
         runTask("generatePklPojo")
@@ -70,6 +71,7 @@ class JavaCodeGeneratorsTest : AbstractTest() {
     @Test
     fun `compile generated code`() {
         writeBuildFile()
+        writeProjectFile()
         writePklFile()
 
         runTask("compileJava")
@@ -106,6 +108,7 @@ class JavaCodeGeneratorsTest : AbstractTest() {
       hpkl {
         javaCodeGenerators {
           configClasses {
+            projectDir = project.projectDir
             sourceModules = ["mod.pkl"]
             durationClass = "java.time.Duration"
             dataSizeClass = "org.springframework.util.unit.DataSize"
@@ -122,6 +125,27 @@ class JavaCodeGeneratorsTest : AbstractTest() {
         }
       }      
     """,
+        )
+    }
+
+    private fun writeProjectFile() {
+        writeFile(
+            "PklProject",
+            """
+                amends "pkl:Project"
+                
+                
+                package {
+                  name = "Test"
+                  baseUri = "package://packages.pklhub.io/\(name)"
+                  version =  "0.0.1"
+                  packageZipUrl = "https://repo.pklhub.ai/\(name)/-/archive/\(version)/\(name)-\(version).zip"
+                }
+                
+                dependencies {
+                    ["k8s"] { uri = "package://pkg.pkl-lang.org/pkl-k8s/k8s@1.1.1" }
+                }                
+            """.trimIndent(),
         )
     }
 
