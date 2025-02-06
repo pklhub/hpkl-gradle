@@ -71,6 +71,7 @@ class JavaCodeGeneratorsTest : AbstractTest() {
     @Test
     fun `compile generated code`() {
         writeBuildFile()
+        writeProjectFile()
         writePklFile()
 
         runTask("compileJava")
